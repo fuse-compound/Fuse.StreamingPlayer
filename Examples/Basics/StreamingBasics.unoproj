@@ -1,13 +1,14 @@
 {
-    "Packages": [
-        "Fuse",
-        "FuseJS",
-        "Fuse.BasicTheme"
-    ],
-    "Projects": [
-        "../../src/Fuse.StreamingPlayer.unoproj",
-    ],
-    "Includes": [
-        "*",
-    ]
+  "Packages": [
+    "Fuse",
+    "FuseJS",
+    "Fuse.BasicTheme"
+  ],
+  "Projects": [
+    "../../../Fuse.MediaQuery/src/Fuse.MediaQuery.unoproj",
+    "../../src/Fuse.StreamingPlayer.unoproj",
+  ],
+  "Includes": [
+    "*",
+  ]
 }
