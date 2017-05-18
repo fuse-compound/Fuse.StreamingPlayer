@@ -1,22 +1,20 @@
 package com.fuse.StreamingPlayer;
 
-import android.annotation.TargetApi;
-import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.AssetFileDescriptor;
-import android.content.res.AssetManager;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
-import android.media.session.MediaController;
-import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
 import android.os.Binder;
-import android.os.Build;
 import android.os.IBinder;
+import android.os.RemoteException;
+import android.support.v7.app.NotificationCompat;
+import android.support.v4.media.session.MediaControllerCompat;
+import android.support.v4.media.session.MediaSessionCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
 
 import java.util.ArrayList;
 
@@ -46,8 +44,8 @@ public final class StreamingAudioService
     }
 
     MediaPlayer _player;
-    MediaSession _session;
-    MediaController _controller;
+    MediaSessionCompat _session;
+    MediaControllerCompat _controller;
     MediaMetadataRetriever _metadataRetriever;
 
     LocalBinder _binder = new LocalBinder();
@@ -74,7 +72,15 @@ public final class StreamingAudioService
         _player.setOnPreparedListener(this);
         _player.setOnCompletionListener(this);
         _metadataRetriever = new MediaMetadataRetriever();
-        initMediaSessions();
+
+        try
+        {
+            initMediaSessions();
+        }
+        catch (RemoteException e)
+        {
+            _prepared = false;
+        }
     }
 
     @Override
@@ -135,7 +141,6 @@ public final class StreamingAudioService
         _streamingAudioClient.OnInternalStatusChanged(intState);
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void onPrepared(MediaPlayer mp)
     {
@@ -144,7 +149,7 @@ public final class StreamingAudioService
         _session.setActive(true);
         _player.setLooping(false);
         _player.start();
-        _session.setPlaybackState(new PlaybackState.Builder()
+        _session.setPlaybackState(new PlaybackStateCompat.Builder()
                 .setState(PlaybackState.STATE_PLAYING, 0, 1.0f)
                 .build());
         setState(AndroidPlayerState.Started);
@@ -333,7 +338,6 @@ public final class StreamingAudioService
     public static final String ACTION_PREVIOUS = "action_previous";
     public static final String ACTION_STOP = "action_stop";
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private void handleIntent(Intent intent)
     {
         if (intent == null) return;
@@ -370,28 +374,26 @@ public final class StreamingAudioService
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.KITKAT_WATCH)
-    public Notification.Action generateAction(int icon, String title, String intentAction)
+    public NotificationCompat.Action generateAction(int icon, String title, String intentAction)
     {
         Intent intent = new Intent(getApplicationContext(), StreamingAudioService.class);
         intent.setAction(intentAction);
         PendingIntent pendingIntent = PendingIntent.getService(getApplicationContext(), 1, intent, 0);
-        return new Notification.Action.Builder(icon, title, pendingIntent).build();
+        return new NotificationCompat.Action.Builder(icon, title, pendingIntent).build();
     }
 
 
-    private void buildNotification(Notification.Action action)
+    private void buildNotification(NotificationCompat.Action action)
     {
         ArtworkMediaNotification.Notify(_currentTrack, action, _session, this);
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private void initMediaSessions()
+    private void initMediaSessions() throws RemoteException
     {
-        _session = new MediaSession(getApplicationContext(), "FuseStreamingPlayerSession");
-        _controller = new MediaController(getApplicationContext(), _session.getSessionToken());
+        _session = new MediaSessionCompat(getApplicationContext(), "FuseStreamingPlayerSession");
+        _controller = new MediaControllerCompat(getApplicationContext(), _session.getSessionToken());
 
-        _session.setCallback(new MediaSession.Callback()
+        _session.setCallback(new MediaSessionCompat.Callback()
          {
              @Override
              public void onPlay()
@@ -435,7 +437,6 @@ public final class StreamingAudioService
          });
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @Override
     public boolean onUnbind(Intent intent)
     {

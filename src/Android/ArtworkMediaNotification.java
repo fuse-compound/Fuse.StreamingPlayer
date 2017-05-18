@@ -1,6 +1,5 @@
 package com.fuse.StreamingPlayer;
 
-import android.annotation.TargetApi;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -8,10 +7,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.media.MediaMetadata;
 import android.media.session.MediaSession;
 import android.os.AsyncTask;
-import android.os.Build;
+import android.support.v7.app.NotificationCompat;
+import android.support.v4.media.MediaMetadataCompat;
+import android.support.v4.media.session.MediaSessionCompat;
 
 import java.io.IOException;
 import java.net.URL;
@@ -49,11 +49,11 @@ public final class ArtworkMediaNotification
     }
 
     private Track _currentTrack;
-    private Notification.Action _action;
-    private MediaSession _session;
+    private NotificationCompat.Action _action;
+    private MediaSessionCompat _session;
     private StreamingAudioService _service;
 
-    private ArtworkMediaNotification(Track track, MediaSession session, Notification.Action action, StreamingAudioService service)
+    private ArtworkMediaNotification(Track track, MediaSessionCompat session, NotificationCompat.Action action, StreamingAudioService service)
     {
         _session = session;
         _action = action;
@@ -66,22 +66,18 @@ public final class ArtworkMediaNotification
         new DownloadArtworkBitmapTask().execute(urlStr);
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public void setArtworkBitmap(Bitmap bmp)
     {
         //This lets the album art be visible as the background while in the lock screen
-        _session.setMetadata(new android.media.MediaMetadata.Builder()
-                .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, bmp)
-                .build());
-
+        MediaMetadataCompat.Builder metadataBuilder = new MediaMetadataCompat.Builder();
+        metadataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bmp);
+        _session.setMetadata(metadataBuilder.build());
         finishNotification(bmp);
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private void finishNotification(Bitmap bmp)
     {
-        Notification.MediaStyle style = new Notification.MediaStyle()
-                .setMediaSession(_session.getSessionToken());
+        NotificationCompat.MediaStyle style = new NotificationCompat.MediaStyle().setMediaSession(_session.getSessionToken());
         style.setShowActionsInCompactView(0, 1, 2, 3, 4);
 
         Intent intent = new Intent(_service.getApplicationContext(), StreamingAudioService.class);
@@ -89,7 +85,7 @@ public final class ArtworkMediaNotification
         PendingIntent pendingIntent = PendingIntent.getService(_service.getApplicationContext(), 1, intent, 0);
 
 
-        Notification.Builder builder = new Notification.Builder(_service);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(_service);
 
         builder.setSmallIcon(android.R.drawable.ic_media_play);
         if (bmp != null)
@@ -112,7 +108,7 @@ public final class ArtworkMediaNotification
         notificationManager.notify(1, builder.build());
     }
 
-    public static void Notify(Track track, Notification.Action action, MediaSession session, StreamingAudioService service)
+    public static void Notify(Track track, NotificationCompat.Action action, MediaSessionCompat session, StreamingAudioService service)
     {
         //Async task for getting artwork bitmap and assigning it to the media session
         ArtworkMediaNotification notification = new ArtworkMediaNotification(track, session, action, service);

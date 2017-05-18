@@ -1,0 +1,9 @@
+<Extensions Backend="CPlusPlus" Condition="Android">
+    <Require AndroidManifest.ApplicationElement><![CDATA[
+	<receiver android:name="android.support.v4.media.session.MediaButtonReceiver" >
+		<intent-filter>
+			<action android:name="android.intent.action.MEDIA_BUTTON" />
+		</intent-filter>
+	</receiver>
+    ]]></Require>
+</Extensions>
