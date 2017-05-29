@@ -5,12 +5,16 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.media.session.PlaybackState;
+import android.net.Uri;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.support.v4.media.session.MediaButtonReceiver;
 import android.support.v7.app.NotificationCompat;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
@@ -67,11 +71,16 @@ public final class StreamingAudioService
     {
         Logger.Log("Android: Created new MediaPlayer");
         _player = new MediaPlayer();
-        //_player.setAudioStreamType(AudioManager.STREAM_MUSIC);
         _player.setOnErrorListener(this);
         _player.setOnPreparedListener(this);
         _player.setOnCompletionListener(this);
         _metadataRetriever = new MediaMetadataRetriever();
+
+        // Todo: somewhere we need to request audioFocus. See 8:35 in video
+        //       this also plays into when we need to
+        // - need one of these AudioManager.OnAudioFocusChangeListener (9:15)
+        // - need to handle the becoming noise stuff (13:36)
+        // - eh pre 21 intent stuff I havent grasped yet. See (26:00) ah by 27:00 I think I get it
 
         try
         {
@@ -79,8 +88,108 @@ public final class StreamingAudioService
         }
         catch (RemoteException e)
         {
-            _prepared = false;
+            com.fuse.AndroidInteropHelper.UncheckedThrow(e);
         }
+    }
+
+    private void initMediaSessions() throws RemoteException
+    {
+        _session = new MediaSessionCompat(getApplicationContext(), "FuseStreamingPlayerSession");
+        _session.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
+        _session.setActive(true);
+
+        _controller = new MediaControllerCompat(getApplicationContext(), _session.getSessionToken());
+
+        _session.setCallback(new MediaSessionCompat.Callback()
+         {
+             @Override
+             public boolean onMediaButtonEvent(Intent mediaButtonEvent)
+             {
+                 return super.onMediaButtonEvent(mediaButtonEvent);
+             }
+
+             @Override
+             public void onPlay()
+             {
+                 super.onPlay();
+                 Resume();
+             }
+
+             @Override
+             public void onPlayFromMediaId(String mediaId, Bundle extras)
+             {
+                 super.onPlayFromMediaId(mediaId, extras);
+             }
+
+             @Override
+             public void onPlayFromSearch(String query, Bundle extras)
+             {
+                 super.onPlayFromSearch(query, extras);
+             }
+
+             @Override
+             public void onPlayFromUri(Uri uri, Bundle extras)
+             {
+                 super.onPlayFromUri(uri, extras);
+             }
+
+             @Override
+             public void onSkipToQueueItem(long id)
+             {
+                 super.onSkipToQueueItem(id);
+             }
+
+             @Override
+             public void onPause()
+             {
+                 super.onPause();
+                 Pause();
+             }
+
+             @Override
+             public void onSkipToNext()
+             {
+                 super.onSkipToNext();
+                 Logger.Log("Skipping from media notification: " + _currentTrack.Name);
+                 Next();
+             }
+
+             @Override
+             public void onSkipToPrevious()
+             {
+                 super.onSkipToPrevious();
+                 Previous();
+             }
+
+             @Override
+             public void onFastForward()
+             {
+                 super.onFastForward();
+             }
+
+             @Override
+             public void onRewind()
+             {
+                 super.onRewind();
+             }
+
+             @Override
+             public void onStop()
+             {
+                 super.onStop();
+                 Stop();
+                 NotificationManager notificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+                 notificationManager.cancel(1);
+                 Intent intent = new Intent(getApplicationContext(), StreamingAudioService.class);
+                 stopService(intent);
+             }
+
+             @Override
+             public void onSeekTo(long pos)
+             {
+                 super.onSeekTo(pos);
+             }
+         });
     }
 
     @Override
@@ -146,12 +255,23 @@ public final class StreamingAudioService
     {
         _prepared = true;
         setState(AndroidPlayerState.Prepared);
-        _session.setActive(true);
         _player.setLooping(false);
         _player.start();
+
+            // ACTION_REWIND
+            // ACTION_FAST_FORWARD
+
         _session.setPlaybackState(new PlaybackStateCompat.Builder()
-                .setState(PlaybackState.STATE_PLAYING, 0, 1.0f)
-                .build());
+                                  .setActions(PlaybackStateCompat.ACTION_PLAY |
+                                              PlaybackStateCompat.ACTION_PLAY_PAUSE |
+                                              PlaybackStateCompat.ACTION_PAUSE |
+                                              PlaybackStateCompat.ACTION_STOP |
+                                              PlaybackStateCompat.ACTION_SKIP_TO_NEXT |
+                                              PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS |
+                                              PlaybackStateCompat.ACTION_SEEK_TO |
+                                              PlaybackStateCompat.ACTION_PLAY_FROM_URI)
+                                  .setState(PlaybackState.STATE_PLAYING, 0, 1.0f)
+                                  .build());
         setState(AndroidPlayerState.Started);
         buildNotification(generateAction(android.R.drawable.ic_media_pause, "Pause", ACTION_PAUSE));
     }
@@ -320,13 +440,14 @@ public final class StreamingAudioService
     {
         Logger.Log("Error while mediaplayer in state: " + _state);
         Logger.Log("We did get an error: what:" + what + ", extra:" + extra);
-        return false;
+        return true;
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId)
     {
         handleIntent(intent);
+        MediaButtonReceiver.handleIntent(_session, intent);
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -386,55 +507,6 @@ public final class StreamingAudioService
     private void buildNotification(NotificationCompat.Action action)
     {
         ArtworkMediaNotification.Notify(_currentTrack, action, _session, this);
-    }
-
-    private void initMediaSessions() throws RemoteException
-    {
-        _session = new MediaSessionCompat(getApplicationContext(), "FuseStreamingPlayerSession");
-        _controller = new MediaControllerCompat(getApplicationContext(), _session.getSessionToken());
-
-        _session.setCallback(new MediaSessionCompat.Callback()
-         {
-             @Override
-             public void onPlay()
-             {
-                 super.onPlay();
-                 Resume();
-             }
-
-             @Override
-             public void onPause()
-             {
-                 super.onPause();
-                 Pause();
-             }
-
-             @Override
-             public void onSkipToNext()
-             {
-                 super.onSkipToNext();
-                 Logger.Log("Skipping from media notification: " + _currentTrack.Name);
-                 Next();
-             }
-
-             @Override
-             public void onSkipToPrevious()
-             {
-                 super.onSkipToPrevious();
-                 Previous();
-             }
-
-             @Override
-             public void onStop()
-             {
-                 super.onStop();
-                 Stop();
-                 NotificationManager notificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
-                 notificationManager.cancel(1);
-                 Intent intent = new Intent(getApplicationContext(), StreamingAudioService.class);
-                 stopService(intent);
-             }
-         });
     }
 
     @Override
