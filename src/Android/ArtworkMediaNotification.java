@@ -79,20 +79,20 @@ public final class ArtworkMediaNotification
         // Time to make the notifications
         NotificationCompat.Builder builder = MediaStyleHelper.makeBuilder(_service, _session);
 
+        // actions
+        builder.addAction(generateAction(android.R.drawable.ic_media_previous, "Previous", KeyEvent.KEYCODE_MEDIA_PREVIOUS));
+        builder.addAction(generateAction(_primaryActionIcon, _primaryActionTitle, _primaryActionKeyEvent));
+        builder.addAction(generateAction(android.R.drawable.ic_media_next, "Next", KeyEvent.KEYCODE_MEDIA_NEXT));
+
         // style
         NotificationCompat.MediaStyle style = new NotificationCompat.MediaStyle().setMediaSession(_session.getSessionToken());
-        style.setShowActionsInCompactView(0, 1, 2, 3, 4);
+        style.setShowActionsInCompactView(0, 1, 2); // indexed into the actions above by order they were added :/ ew
         builder.setStyle(style);
 
         // icon
         builder.setSmallIcon(android.R.drawable.ic_media_play);
         if (bmp != null)
             builder.setLargeIcon(bmp);
-
-        // actions
-        builder.addAction(generateAction(android.R.drawable.ic_media_previous, "Previous", KeyEvent.KEYCODE_MEDIA_PREVIOUS));
-        builder.addAction(generateAction(_primaryActionIcon, _primaryActionTitle, _primaryActionKeyEvent));
-        builder.addAction(generateAction(android.R.drawable.ic_media_next, "Next", KeyEvent.KEYCODE_MEDIA_NEXT));
 
         // dispatch
         NotificationManager notificationManager = (NotificationManager) _service.getSystemService(Context.NOTIFICATION_SERVICE);

@@ -252,9 +252,6 @@ public final class StreamingAudioService
         _player.setLooping(false);
         _player.start();
 
-            // ACTION_REWIND
-            // ACTION_FAST_FORWARD
-
         _session.setPlaybackState(new PlaybackStateCompat.Builder()
                                   .setActions(PlaybackStateCompat.ACTION_PLAY |
                                               PlaybackStateCompat.ACTION_PLAY_PAUSE |
@@ -408,7 +405,7 @@ public final class StreamingAudioService
             _player.pause();
             setState(AndroidPlayerState.Paused);
 
-            buildNotification(android.R.drawable.ic_media_play, "Play", KeyEvent.KEYCODE_MEDIA_PAUSE);
+            buildNotification(android.R.drawable.ic_media_play, "Play", KeyEvent.KEYCODE_MEDIA_PLAY);
         }
     }
 
