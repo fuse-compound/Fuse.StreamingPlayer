@@ -12,6 +12,7 @@
     "Android/StreamingAudioService.java:Java:Android",
     "Android/Track.java:Java:Android",
     "Android/ArtworkMediaNotification.java:Java:Android",
+    "Android/MediaStyleHelper.java:Java:Android",
     "Android/Logger.java:Java:Android",
 
     "*"

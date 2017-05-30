@@ -9,9 +9,11 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.session.MediaSession;
 import android.os.AsyncTask;
+import android.support.v4.view.KeyEventCompat;
 import android.support.v7.app.NotificationCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
+import android.view.KeyEvent;
 
 import java.io.IOException;
 import java.net.URL;
@@ -49,20 +51,21 @@ public final class ArtworkMediaNotification
     }
 
     private Track _currentTrack;
-    private NotificationCompat.Action _action;
     private MediaSessionCompat _session;
     private StreamingAudioService _service;
+    private int _primaryActionIcon;
+    private String _primaryActionTitle;
+    private int _primaryActionKeyEvent;
 
-    private ArtworkMediaNotification(Track track, MediaSessionCompat session, NotificationCompat.Action action, StreamingAudioService service)
+    private ArtworkMediaNotification(Track track, MediaSessionCompat session, StreamingAudioService service, String urlStr,
+                                     int primaryActionIcon, String primaryActionTitle, int primaryActionKeyEvent)
     {
         _session = session;
-        _action = action;
         _currentTrack = track;
         _service = service;
-    }
-
-    private void assignArtowrkFromUrl(String urlStr)
-    {
+        _primaryActionIcon = primaryActionIcon;
+        _primaryActionTitle = primaryActionTitle;
+        _primaryActionKeyEvent = primaryActionKeyEvent;
         new DownloadArtworkBitmapTask().execute(urlStr);
     }
 
@@ -72,46 +75,40 @@ public final class ArtworkMediaNotification
         MediaMetadataCompat.Builder metadataBuilder = new MediaMetadataCompat.Builder();
         metadataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bmp);
         _session.setMetadata(metadataBuilder.build());
-        finishNotification(bmp);
-    }
 
-    private void finishNotification(Bitmap bmp)
-    {
+        // Time to make the notifications
+        NotificationCompat.Builder builder = MediaStyleHelper.makeBuilder(_service, _session);
+
+        // style
         NotificationCompat.MediaStyle style = new NotificationCompat.MediaStyle().setMediaSession(_session.getSessionToken());
         style.setShowActionsInCompactView(0, 1, 2, 3, 4);
+        builder.setStyle(style);
 
-        Intent intent = new Intent(_service.getApplicationContext(), StreamingAudioService.class);
-        intent.setAction(StreamingAudioService.ACTION_STOP);
-        PendingIntent pendingIntent = PendingIntent.getService(_service.getApplicationContext(), 1, intent, 0);
-
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(_service);
-
+        // icon
         builder.setSmallIcon(android.R.drawable.ic_media_play);
         if (bmp != null)
-        {
-            Logger.Log("We are setting artwork as small icon");
             builder.setLargeIcon(bmp);
-        }
 
+        // actions
+        builder.addAction(generateAction(android.R.drawable.ic_media_previous, "Previous", KeyEvent.KEYCODE_MEDIA_PREVIOUS));
+        builder.addAction(generateAction(_primaryActionIcon, _primaryActionTitle, _primaryActionKeyEvent));
+        builder.addAction(generateAction(android.R.drawable.ic_media_next, "Next", KeyEvent.KEYCODE_MEDIA_NEXT));
 
-        builder.setContentTitle(_currentTrack.Name)
-                .setContentText(_currentTrack.Artist)
-                //.setDeleteIntent(pendingIntent)
-                .setStyle(style);
-
-        builder.addAction(_service.generateAction(android.R.drawable.ic_media_previous, "Previous", StreamingAudioService.ACTION_PREVIOUS));
-        builder.addAction(_action);
-        builder.addAction(_service.generateAction(android.R.drawable.ic_media_next, "Next", StreamingAudioService.ACTION_NEXT));
-
+        // dispatch
         NotificationManager notificationManager = (NotificationManager) _service.getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.notify(1, builder.build());
     }
 
-    public static void Notify(Track track, NotificationCompat.Action action, MediaSessionCompat session, StreamingAudioService service)
+    public NotificationCompat.Action generateAction(int icon, String title, int mediaKeyEvent)
+    {
+        // mediaKeyEvent should be something like KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
+        return new NotificationCompat.Action(icon, title, MediaStyleHelper.getActionIntent(_service, mediaKeyEvent));
+    }
+
+    public static void Notify(Track track, MediaSessionCompat session, StreamingAudioService service,
+                              int primaryActionIcon, String primaryActionTitle, int primaryActionKeyEvent)
     {
         //Async task for getting artwork bitmap and assigning it to the media session
-        ArtworkMediaNotification notification = new ArtworkMediaNotification(track, session, action, service);
-        notification.assignArtowrkFromUrl(track.ArtworkUrl);
+        new ArtworkMediaNotification(track, session, service, track.ArtworkUrl, primaryActionIcon, primaryActionTitle, primaryActionKeyEvent);
     }
 }

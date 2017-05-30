@@ -11,19 +11,14 @@ namespace StreamingPlayer
     [ForeignInclude(Language.Java,
                     "com.fuse.StreamingPlayer.StreamingAudioService",
                     "com.fuse.StreamingPlayer.Track",
-                    "android.media.MediaPlayer",
-                    "android.media.AudioManager",
                     "java.lang.Exception",
                     "android.app.Activity",
                     "android.content.ComponentName",
                     "android.content.Context",
                     "android.content.Intent",
                     "android.content.ServiceConnection",
-                    "android.os.Bundle",
                     "android.os.IBinder",
-                    "android.os.Parcel",
-                    "android.os.RemoteException")]
-    [Require("AndroidManifest.ApplicationElement", "<service android:name=\"com.fuse.StreamingPlayer.StreamingAudioService\" />")]
+                    "android.view.KeyEvent")]
     extern(Android) class StreamingPlayerAndroidImpl : IStreamingPlayer
     {
         //------------------------------------------------------------
@@ -138,7 +133,8 @@ namespace StreamingPlayer
             {
                 Activity a = com.fuse.Activity.getRootActivity();
                 Intent intent = new Intent(a, StreamingAudioService.class);
-                intent.setAction(StreamingAudioService.ACTION_PLAY);
+                intent.setPackage(a.getPackageName());
+                intent.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY));
                 a.bindService(intent, scon, Context.BIND_AUTO_CREATE);
                 a.startService(intent);
             }
