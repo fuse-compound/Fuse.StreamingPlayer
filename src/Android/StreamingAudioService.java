@@ -2,8 +2,11 @@ package com.fuse.StreamingPlayer;
 
 import android.app.NotificationManager;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.media.session.PlaybackState;
@@ -12,6 +15,7 @@ import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.media.session.MediaButtonReceiver;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
@@ -21,7 +25,7 @@ import java.util.ArrayList;
 
 public final class StreamingAudioService
         extends Service
-        implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener, MediaPlayer.OnCompletionListener
+        implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener, MediaPlayer.OnCompletionListener, AudioManager.OnAudioFocusChangeListener
 {
 
     public interface StreamingAudioClient
@@ -46,7 +50,6 @@ public final class StreamingAudioService
 
     MediaPlayer _player;
     MediaSessionCompat _session;
-    MediaMetadataRetriever _metadataRetriever;
 
     LocalBinder _binder = new LocalBinder();
     boolean _prepared = false;
@@ -70,22 +73,29 @@ public final class StreamingAudioService
         _player.setOnErrorListener(this);
         _player.setOnPreparedListener(this);
         _player.setOnCompletionListener(this);
-        _metadataRetriever = new MediaMetadataRetriever();
 
         // Todo: somewhere we need to request audioFocus. See 8:35 in video
         //       this also plays into when we need to
-        // - need one of these AudioManager.OnAudioFocusChangeListener (9:15)
-        // - need to handle the becoming noise stuff (13:36)
-        // - eh pre 21 intent stuff I havent grasped yet. See (26:00) ah by 27:00 I think I get it
 
         try
         {
             initMediaSessions();
+            startNoisyReceiver();
         }
         catch (RemoteException e)
         {
             com.fuse.AndroidInteropHelper.UncheckedThrow(e);
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        audioManager.abandonAudioFocus(this);
+        stopNoisyReciever();
+        _session.release();
+        NotificationManagerCompat.from(this).cancel(1);
     }
 
     private void initMediaSessions() throws RemoteException
@@ -106,31 +116,9 @@ public final class StreamingAudioService
              public void onPlay()
              {
                  super.onPlay();
+                 if( !successfullyRetrievedAudioFocus() )
+                     return;
                  Resume();
-             }
-
-             @Override
-             public void onPlayFromMediaId(String mediaId, Bundle extras)
-             {
-                 super.onPlayFromMediaId(mediaId, extras);
-             }
-
-             @Override
-             public void onPlayFromSearch(String query, Bundle extras)
-             {
-                 super.onPlayFromSearch(query, extras);
-             }
-
-             @Override
-             public void onPlayFromUri(Uri uri, Bundle extras)
-             {
-                 super.onPlayFromUri(uri, extras);
-             }
-
-             @Override
-             public void onSkipToQueueItem(long id)
-             {
-                 super.onSkipToQueueItem(id);
              }
 
              @Override
@@ -156,18 +144,6 @@ public final class StreamingAudioService
              }
 
              @Override
-             public void onFastForward()
-             {
-                 super.onFastForward();
-             }
-
-             @Override
-             public void onRewind()
-             {
-                 super.onRewind();
-             }
-
-             @Override
              public void onStop()
              {
                  super.onStop();
@@ -182,8 +158,68 @@ public final class StreamingAudioService
              public void onSeekTo(long pos)
              {
                  super.onSeekTo(pos);
+                 Seek((int)pos);
              }
          });
+    }
+
+    private boolean successfullyRetrievedAudioFocus() {
+        AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+
+        int result = audioManager.requestAudioFocus(this,
+                AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+
+        return result == AudioManager.AUDIOFOCUS_GAIN;
+    }
+
+    @Override
+    public void onAudioFocusChange(int focusChange) {
+        switch( focusChange ) {
+            case AudioManager.AUDIOFOCUS_LOSS: {
+                if( _player.isPlaying() ) {
+                    Stop();
+                }
+                break;
+            }
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT: {
+                Pause();
+                break;
+            }
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK: {
+                if( _player != null ) {
+                    _player.setVolume(0.3f, 0.3f);
+                }
+                break;
+            }
+            case AudioManager.AUDIOFOCUS_GAIN: {
+                if( _player != null ) {
+                    if( !_player.isPlaying() ) {
+                        Resume();
+                    }
+                    _player.setVolume(1.0f, 1.0f);
+                }
+                break;
+            }
+        }
+    }
+
+    private BroadcastReceiver _noisyReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if( _player != null && _player.isPlaying())
+                _player.pause();
+        }
+    };
+
+    private void startNoisyReceiver() {
+        //Handles headphones coming unplugged. cannot be done through a manifest receiver
+        IntentFilter filter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+        registerReceiver(_noisyReceiver, filter);
+    }
+
+    private void stopNoisyReciever()
+    {
+        unregisterReceiver(_noisyReceiver);
     }
 
     @Override
@@ -372,7 +408,6 @@ public final class StreamingAudioService
             Play(_playlist.get(CurrentTrackIndex() + 1));
         }
         _streamingAudioClient.OnHasPrevNextChanged();
-        buildNotification(android.R.drawable.ic_media_pause, "Pause", KeyEvent.KEYCODE_MEDIA_PAUSE);
     }
 
     public void Previous()
@@ -382,7 +417,6 @@ public final class StreamingAudioService
             Play(_playlist.get(CurrentTrackIndex() - 1));
         }
         _streamingAudioClient.OnHasPrevNextChanged();
-        buildNotification(android.R.drawable.ic_media_pause, "Pause", KeyEvent.KEYCODE_MEDIA_PAUSE);
     }
 
     public boolean HasNext()
