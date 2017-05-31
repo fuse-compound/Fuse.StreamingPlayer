@@ -7,12 +7,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
-import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
-import android.media.session.PlaybackState;
-import android.net.Uri;
 import android.os.Binder;
-import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.support.v4.app.NotificationManagerCompat;
@@ -22,42 +18,29 @@ import android.support.v4.media.session.PlaybackStateCompat;
 import android.view.KeyEvent;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 public final class StreamingAudioService
         extends Service
         implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener, MediaPlayer.OnCompletionListener, AudioManager.OnAudioFocusChangeListener
 {
-
-    public interface StreamingAudioClient
-    {
-        void OnStatusChanged();
-
-        void OnHasPrevNextChanged();
-
-        void OnCurrentTrackChanged();
-
-        void OnInternalStatusChanged(int i);
-    }
-
-    public class LocalBinder extends Binder
-    {
-        public StreamingAudioService getService()
-        {
-            // Return this instance of LocalService so clients can call public methods
-            return StreamingAudioService.this;
-        }
-    }
-
-    MediaPlayer _player;
-    MediaSessionCompat _session;
-
+    // Service
     LocalBinder _binder = new LocalBinder();
+
+    // Player
+    MediaSessionCompat _session;
+    AudioManager _audioManager;
+    MediaPlayer _player;
+
+    // State
+    PlaybackStateCompat.Builder _playbackStateBuilder = new PlaybackStateCompat.Builder();
+    AndroidPlayerState _state = AndroidPlayerState.Idle; // TODO can we merge this with android's state stuff?
     boolean _prepared = false;
 
+    // Uno interaction
     StreamingAudioClient _streamingAudioClient;
-
-    Track _currentTrack;
     ArrayList<Track> _playlist = new ArrayList<Track>();
+    Track _currentTrack;
 
 
     public void setAudioClient(StreamingAudioClient bgp)
@@ -68,14 +51,11 @@ public final class StreamingAudioService
     @Override
     public void onCreate()
     {
-        Logger.Log("=======================  Android: Created new MediaPlayer ===============================");
+        _audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         _player = new MediaPlayer();
         _player.setOnErrorListener(this);
         _player.setOnPreparedListener(this);
         _player.setOnCompletionListener(this);
-
-        // Todo: somewhere we need to request audioFocus. See 8:35 in video
-        //       this also plays into when we need to
 
         try
         {
@@ -89,13 +69,14 @@ public final class StreamingAudioService
     }
 
     @Override
-    public void onDestroy() {
-        super.onDestroy();
-        AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        audioManager.abandonAudioFocus(this);
+    public void onDestroy()
+    {
+        _session.setActive(false);
+        _audioManager.abandonAudioFocus(this);
         stopNoisyReciever();
         _session.release();
         NotificationManagerCompat.from(this).cancel(1);
+        super.onDestroy();
     }
 
     private void initMediaSessions() throws RemoteException
@@ -105,114 +86,158 @@ public final class StreamingAudioService
         _session.setActive(true);
 
         _session.setCallback(new MediaSessionCompat.Callback()
-         {
-             @Override
-             public boolean onMediaButtonEvent(Intent mediaButtonEvent)
-             {
-                 return super.onMediaButtonEvent(mediaButtonEvent);
-             }
+        {
+            @Override
+            public boolean onMediaButtonEvent(Intent mediaButtonEvent)
+            {
+                return super.onMediaButtonEvent(mediaButtonEvent);
+            }
 
-             @Override
-             public void onPlay()
-             {
-                 super.onPlay();
-                 if( !successfullyRetrievedAudioFocus() )
-                     return;
-                 Resume();
-             }
+            @Override
+            public void onPlay()
+            {
+                super.onPlay();
+                if (tryTakeAudioFocus())
+                    Resume();
+            }
 
-             @Override
-             public void onPause()
-             {
-                 super.onPause();
-                 Pause();
-             }
+            @Override
+            public void onPause()
+            {
+                super.onPause();
+                Pause();
+            }
 
-             @Override
-             public void onSkipToNext()
-             {
-                 super.onSkipToNext();
-                 Logger.Log("Skipping from media notification: " + _currentTrack.Name);
-                 Next();
-             }
+            @Override
+            public void onSkipToNext()
+            {
+                super.onSkipToNext();
+                Logger.Log("Skipping from media notification: " + _currentTrack.Name);
+                Next();
+            }
 
-             @Override
-             public void onSkipToPrevious()
-             {
-                 super.onSkipToPrevious();
-                 Previous();
-             }
+            @Override
+            public void onSkipToPrevious()
+            {
+                super.onSkipToPrevious();
+                Previous();
+            }
 
-             @Override
-             public void onStop()
-             {
-                 super.onStop();
-                 Stop();
-                 NotificationManager notificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
-                 notificationManager.cancel(1);
-                 Intent intent = new Intent(getApplicationContext(), StreamingAudioService.class);
-                 stopService(intent);
-             }
+            @Override
+            public void onStop()
+            {
+                super.onStop();
+                Stop();
+                NotificationManager notificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+                notificationManager.cancel(1);
+                Intent intent = new Intent(getApplicationContext(), StreamingAudioService.class);
+                stopService(intent);
+            }
 
-             @Override
-             public void onSeekTo(long pos)
-             {
-                 super.onSeekTo(pos);
-                 Seek((int)pos);
-             }
-         });
+            @Override
+            public void onSeekTo(long pos)
+            {
+                super.onSeekTo(pos);
+                Seek((int) pos);
+            }
+        });
     }
 
-    private boolean successfullyRetrievedAudioFocus() {
+    private boolean tryTakeAudioFocus()
+    {
         AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-
-        int result = audioManager.requestAudioFocus(this,
-                AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
-
+        int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
         return result == AudioManager.AUDIOFOCUS_GAIN;
     }
 
-    @Override
-    public void onAudioFocusChange(int focusChange) {
-        switch( focusChange ) {
-            case AudioManager.AUDIOFOCUS_LOSS: {
-                if( _player.isPlaying() ) {
-                    Stop();
-                }
+    private void setPlaybackState(int newState) // PlaybackStateCompat.STATE_YYY
+    {
+        setPlaybackState(newState, _player.getCurrentPosition());
+    }
+
+    private void setPlaybackState(int newState, int position) // PlaybackStateCompat.STATE_YYY
+    {
+        // Vars we can mutate for result
+        AndroidPlayerState oldUnoState = _state;
+        AndroidPlayerState unoState;
+        int notifKeycode = -1;
+        int notifIcon = -1;
+        String notifText = "<invalid>";
+
+        // Begin
+        _playbackStateBuilder.setState(newState, position, 1f);
+
+        switch (newState)
+        {
+            case PlaybackStateCompat.STATE_STOPPED:
+            {
+                unoState = AndroidPlayerState.Idle;
+                notifKeycode = KeyEvent.KEYCODE_MEDIA_PLAY;
+                notifIcon = android.R.drawable.ic_media_play;
+                notifText = "Play";
                 break;
             }
-            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT: {
-                Pause();
+            case PlaybackStateCompat.STATE_PAUSED:
+            {
+                unoState = AndroidPlayerState.Paused;
+                notifKeycode = KeyEvent.KEYCODE_MEDIA_PLAY;
+                notifIcon = android.R.drawable.ic_media_play;
+                notifText = "Play";
                 break;
             }
-            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK: {
-                if( _player != null ) {
-                    _player.setVolume(0.3f, 0.3f);
-                }
+            case PlaybackStateCompat.STATE_BUFFERING:
+            {
+                unoState = AndroidPlayerState.Preparing;
                 break;
             }
-            case AudioManager.AUDIOFOCUS_GAIN: {
-                if( _player != null ) {
-                    if( !_player.isPlaying() ) {
-                        Resume();
-                    }
-                    _player.setVolume(1.0f, 1.0f);
-                }
+            case PlaybackStateCompat.STATE_PLAYING:
+            {
+                unoState = AndroidPlayerState.Started;
+                notifIcon = android.R.drawable.ic_media_pause;
+                notifText = "Pause";
+                notifKeycode = KeyEvent.KEYCODE_MEDIA_PAUSE;
+
+                _playbackStateBuilder.setActions(PlaybackStateCompat.ACTION_PLAY |
+                        PlaybackStateCompat.ACTION_PLAY_PAUSE |
+                        PlaybackStateCompat.ACTION_PAUSE |
+                        PlaybackStateCompat.ACTION_STOP |
+                        PlaybackStateCompat.ACTION_SKIP_TO_NEXT |
+                        PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS |
+                        PlaybackStateCompat.ACTION_SEEK_TO |
+                        PlaybackStateCompat.ACTION_PLAY_FROM_URI);
                 break;
             }
+            default:
+                return;
+        }
+
+        // update session
+        _session.setPlaybackState(_playbackStateBuilder.build());
+
+        // and the notification if needed
+        if (notifKeycode != -1)
+            ArtworkMediaNotification.Notify(_currentTrack, _session, this, notifIcon, notifText, notifKeycode);
+
+        // and uno
+        if (unoState != oldUnoState)
+        {
+            _state = unoState;
+            _streamingAudioClient.OnInternalStatusChanged(unoState.toInt());
         }
     }
 
-    private BroadcastReceiver _noisyReceiver = new BroadcastReceiver() {
+    private BroadcastReceiver _noisyReceiver = new BroadcastReceiver()
+    {
         @Override
-        public void onReceive(Context context, Intent intent) {
-            if( _player != null && _player.isPlaying())
-                _player.pause();
+        public void onReceive(Context context, Intent intent)
+        {
+            if (_player != null && _player.isPlaying())
+                Pause();
         }
     };
 
-    private void startNoisyReceiver() {
-        //Handles headphones coming unplugged. cannot be done through a manifest receiver
+    private void startNoisyReceiver()
+    {
         IntentFilter filter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
         registerReceiver(_noisyReceiver, filter);
     }
@@ -222,133 +247,6 @@ public final class StreamingAudioService
         unregisterReceiver(_noisyReceiver);
     }
 
-    @Override
-    public IBinder onBind(Intent intent)
-    {
-        return _binder;
-    }
-
-    AndroidPlayerState _state = AndroidPlayerState.Idle;
-
-    void setState(AndroidPlayerState state)
-    {
-        _state = state;
-        int intState = 0;
-        switch (state)
-        {
-            case Idle:
-                intState = 0;
-                Logger.Log("AndroidStatus: Idle");
-                break;
-            case Initialized:
-                intState = 1;
-                Logger.Log("AndroidStatus: Initialized");
-                break;
-            case Preparing:
-                intState = 2;
-                Logger.Log("AndroidStatus: Preparing");
-                break;
-            case Prepared:
-                intState = 3;
-                Logger.Log("AndroidStatus: Prepared");
-                break;
-            case Started:
-                intState = 4;
-                Logger.Log("AndroidStatus: Started");
-                break;
-            case Stopped:
-                intState = 5;
-                Logger.Log("AndroidStatus: Stopped");
-                break;
-            case Paused:
-                intState = 6;
-                Logger.Log("AndroidStatus: Paused");
-                break;
-            case PlaybackCompleted:
-                intState = 7;
-                Logger.Log("AndroidStatus: PlaybackCompleted");
-                break;
-            case Error:
-                intState = 8;
-                Logger.Log("AndroidStatus: Error");
-                break;
-            case End:
-                intState = 9;
-                Logger.Log("AndroidStatus: End");
-                break;
-        }
-        _streamingAudioClient.OnInternalStatusChanged(intState);
-    }
-
-    @Override
-    public void onPrepared(MediaPlayer mp)
-    {
-        _prepared = true;
-        setState(AndroidPlayerState.Prepared);
-        _player.setLooping(false);
-        _player.start();
-
-        _session.setPlaybackState(new PlaybackStateCompat.Builder()
-                                  .setActions(PlaybackStateCompat.ACTION_PLAY |
-                                              PlaybackStateCompat.ACTION_PLAY_PAUSE |
-                                              PlaybackStateCompat.ACTION_PAUSE |
-                                              PlaybackStateCompat.ACTION_STOP |
-                                              PlaybackStateCompat.ACTION_SKIP_TO_NEXT |
-                                              PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS |
-                                              PlaybackStateCompat.ACTION_SEEK_TO |
-                                              PlaybackStateCompat.ACTION_PLAY_FROM_URI)
-                                  .setState(PlaybackState.STATE_PLAYING, 0, 1.0f)
-                                  .build());
-        setState(AndroidPlayerState.Started);
-        buildNotification(android.R.drawable.ic_media_pause, "Pause", KeyEvent.KEYCODE_MEDIA_PAUSE);
-    }
-
-    public void Play(Track track)
-    {
-        if (_prepared)
-        {
-            _prepared = false;
-            _player.stop();
-            _player.reset();
-        }
-        try
-        {
-            _player.reset();
-            _state = AndroidPlayerState.Initialized;
-            Logger.Log("SetDataSource: state: " + _state);
-            _player.setDataSource(track.Url);
-            setState(AndroidPlayerState.Preparing);
-            _player.prepareAsync();
-        }
-        catch (Exception e)
-        {
-            Logger.Log("Exception while setting MediaPlayer DataSource");
-        }
-
-        _currentTrack = track;
-        if (_streamingAudioClient != null)
-        {
-            _streamingAudioClient.OnCurrentTrackChanged();
-            _streamingAudioClient.OnHasPrevNextChanged();
-        }
-    }
-
-    public void Resume()
-    {
-        if (_prepared)
-        {
-            if (_player.isPlaying())
-            {
-                _player.seekTo(0);
-            }
-            else if (_prepared)
-            {
-                _player.start();
-                setState(AndroidPlayerState.Started);
-            }
-            buildNotification(android.R.drawable.ic_media_pause, "Pause", KeyEvent.KEYCODE_MEDIA_PAUSE);
-        }
-    }
 
     public int CurrentTrackIndex()
     {
@@ -378,6 +276,74 @@ public final class StreamingAudioService
         return _currentTrack;
     }
 
+    public boolean HasNext()
+    {
+        int currentIndex = CurrentTrackIndex();
+        int playlistSize = _playlist.size();
+        return currentIndex > -1 && currentIndex < playlistSize - 1;
+    }
+
+    public boolean HasPrevious()
+    {
+        int currentIndex = CurrentTrackIndex();
+        return currentIndex > 0;
+    }
+
+    //
+    // Actions
+    //
+
+    public void Play(Track track)
+    {
+        if (_prepared)
+        {
+            _prepared = false;
+            _player.stop();
+            _player.reset();
+        }
+        try
+        {
+            _player.reset();
+            _state = AndroidPlayerState.Initialized;
+            Logger.Log("SetDataSource: state: " + _state);
+            _player.setDataSource(track.Url);
+            setPlaybackState(PlaybackStateCompat.STATE_BUFFERING, 0);
+            _player.prepareAsync();
+        }
+        catch (Exception e)
+        {
+            Logger.Log("Exception while setting MediaPlayer DataSource");
+        }
+
+        _currentTrack = track;
+        if (_streamingAudioClient != null)
+        {
+            _streamingAudioClient.OnCurrentTrackChanged();
+            _streamingAudioClient.OnHasPrevNextChanged();
+        }
+    }
+
+    public void Resume()
+    {
+        if (_prepared)
+        {
+            if (_player.isPlaying())
+            {
+                _player.seekTo(0);
+                setPlaybackState(PlaybackStateCompat.STATE_PLAYING, 0);
+            }
+            else
+            {
+                if (tryTakeAudioFocus())
+                {
+                    _player.start();
+                    setPlaybackState(PlaybackStateCompat.STATE_PLAYING, _player.getCurrentPosition());
+                }
+            }
+
+        }
+    }
+
     public void Seek(int milliseconds)
     {
         if (_prepared)
@@ -389,10 +355,7 @@ public final class StreamingAudioService
     public void SetPlaylist(Track[] tracks)
     {
         _playlist.clear();
-        for (int i = 0; i < tracks.length; i++)
-        {
-            _playlist.add(tracks[i]);
-        }
+        Collections.addAll(_playlist, tracks);
         _streamingAudioClient.OnHasPrevNextChanged();
     }
 
@@ -419,27 +382,12 @@ public final class StreamingAudioService
         _streamingAudioClient.OnHasPrevNextChanged();
     }
 
-    public boolean HasNext()
-    {
-        int currentIndex = CurrentTrackIndex();
-        int playlistSize = _playlist.size();
-        return currentIndex > -1 && currentIndex < playlistSize - 1;
-    }
-
-    public boolean HasPrevious()
-    {
-        int currentIndex = CurrentTrackIndex();
-        return currentIndex > 0;
-    }
-
     public void Pause()
     {
         if (_state == AndroidPlayerState.Started)
         {
             _player.pause();
-            setState(AndroidPlayerState.Paused);
-
-            buildNotification(android.R.drawable.ic_media_play, "Play", KeyEvent.KEYCODE_MEDIA_PLAY);
+            setPlaybackState(PlaybackStateCompat.STATE_PAUSED);
         }
     }
 
@@ -448,8 +396,22 @@ public final class StreamingAudioService
         _prepared = false;
         _player.stop();
         _player.reset();
-        setState(AndroidPlayerState.Idle);
-        buildNotification(android.R.drawable.ic_media_play, "Play", KeyEvent.KEYCODE_MEDIA_PLAY);
+        _audioManager.abandonAudioFocus(this);
+        setPlaybackState(PlaybackStateCompat.STATE_STOPPED, 0);
+    }
+
+    //
+    // Events
+    //
+
+    @Override
+    public void onPrepared(MediaPlayer mp)
+    {
+        _prepared = true;
+        setPlaybackState(PlaybackStateCompat.STATE_BUFFERING, 0);
+        _player.setLooping(false);
+        _player.start();
+        setPlaybackState(PlaybackStateCompat.STATE_PLAYING, 0);
     }
 
     @Override
@@ -468,21 +430,89 @@ public final class StreamingAudioService
     }
 
     @Override
+    public void onAudioFocusChange(int focusChange)
+    {
+        switch (focusChange)
+        {
+            case AudioManager.AUDIOFOCUS_LOSS:
+            {
+                if (_player.isPlaying())
+                    Stop();
+                break;
+            }
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+            {
+                Pause();
+                break;
+            }
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+            {
+                if (_player != null)
+                    _player.setVolume(0.3f, 0.3f);
+                break;
+            }
+            case AudioManager.AUDIOFOCUS_GAIN:
+            {
+                if (_player != null)
+                {
+                    if (!_player.isPlaying())
+                        Resume();
+                    _player.setVolume(1.0f, 1.0f);
+                }
+                break;
+            }
+        }
+    }
+
+    //
+    // Events received from controls or other systems
+    //
+    // Simply routes everything through to the media session callback
+    // then all we have to do is control everything via MEDIA_BUTTON events
+    // (this is the recommended googly way
+    //
+    @Override
     public int onStartCommand(Intent intent, int flags, int startId)
     {
         MediaButtonReceiver.handleIntent(_session, intent);
         return super.onStartCommand(intent, flags, startId);
     }
 
-    private void buildNotification(int primaryActionIcon, String primaryActionTitle, int primaryActionKeyEvent)
+    //
+    // Binder
+    //
+    public class LocalBinder extends Binder
     {
-        ArtworkMediaNotification.Notify(_currentTrack, _session, this, primaryActionIcon, primaryActionTitle, primaryActionKeyEvent);
+        public StreamingAudioService getService()
+        {
+            // Return this instance of LocalService so clients can call public methods
+            return StreamingAudioService.this;
+        }
     }
+
+    @Override
+    public IBinder onBind(Intent intent)
+    {
+        return _binder;
+    }
+
 
     @Override
     public boolean onUnbind(Intent intent)
     {
         _session.release();
         return super.onUnbind(intent);
+    }
+
+    // Interfaces
+    public interface StreamingAudioClient
+    {
+        void OnStatusChanged();
+
+        void OnHasPrevNextChanged();
+
+        void OnCurrentTrackChanged();
+
+        void OnInternalStatusChanged(int i);
     }
 }
