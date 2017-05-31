@@ -73,6 +73,9 @@ public final class ArtworkMediaNotification
     {
         //This lets the album art be visible as the background while in the lock screen
         MediaMetadataCompat.Builder metadataBuilder = new MediaMetadataCompat.Builder();
+        metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_TITLE, _currentTrack.Name);
+        metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, _currentTrack.Artist);
+        metadataBuilder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, (long)_currentTrack.Duration);
         metadataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bmp);
         _session.setMetadata(metadataBuilder.build());
 
