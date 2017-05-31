@@ -1,6 +1,7 @@
 package com.fuse.StreamingPlayer;
 
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -9,10 +10,13 @@ import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Binder;
+import android.os.Build;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.media.session.MediaButtonReceiver;
+import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.view.KeyEvent;
@@ -88,12 +92,6 @@ public final class StreamingAudioService
         _session.setCallback(new MediaSessionCompat.Callback()
         {
             @Override
-            public boolean onMediaButtonEvent(Intent mediaButtonEvent)
-            {
-                return super.onMediaButtonEvent(mediaButtonEvent);
-            }
-
-            @Override
             public void onPlay()
             {
                 super.onPlay();
@@ -140,7 +138,25 @@ public final class StreamingAudioService
                 super.onSeekTo(pos);
                 Seek((int) pos);
             }
+
+            @Override
+            public void onCustomAction(String action, Bundle extras)
+            {
+                super.onCustomAction(action, extras);
+                if (action.equals("Resume"))
+                {
+                    Resume();
+                }
+            }
         });
+
+        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+        {
+            Intent mediaButtonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
+            mediaButtonIntent.setClass(this, MediaButtonReceiver.class);
+            PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, mediaButtonIntent, 0);
+            _session.setMediaButtonReceiver(pendingIntent);
+        }
     }
 
     private boolean tryTakeAudioFocus()
@@ -505,14 +521,64 @@ public final class StreamingAudioService
     }
 
     // Interfaces
-    public interface StreamingAudioClient
+    public static abstract class StreamingAudioClient
     {
-        void OnStatusChanged();
+        private MediaControllerCompat _controller;
 
-        void OnHasPrevNextChanged();
+        public abstract void OnStatusChanged();
+        public abstract void OnHasPrevNextChanged();
+        public abstract void OnCurrentTrackChanged();
+        public abstract void OnInternalStatusChanged(int i);
 
-        void OnCurrentTrackChanged();
+        public StreamingAudioClient(StreamingAudioService service) throws RemoteException
+        {
+            _controller = new MediaControllerCompat(service.getApplicationContext(), service._session.getSessionToken());
+        }
 
-        void OnInternalStatusChanged(int i);
+        public final void Play()
+        {
+            _controller.getTransportControls().play();
+        }
+
+        public final void Resume()
+        {
+            _controller.getTransportControls().sendCustomAction("Resume", null);
+        }
+
+        public final void Pause()
+        {
+            _controller.getTransportControls().pause();
+        }
+
+        public final void Stop()
+        {
+            _controller.getTransportControls().stop();
+        }
+
+        public final void Next()
+        {
+            _controller.getTransportControls().skipToNext();
+        }
+
+        public final void Previous()
+        {
+            _controller.getTransportControls().skipToPrevious();
+        }
+
+        public final void Seek(long position)
+        {
+            _controller.getTransportControls().seekTo(position);
+        }
+
+        // Service.AddTrack(jTrack);
+        // sService.Play((Track)track);
+        // sService.SetPlaylist(tracks);
+
+        // sService.CurrentTrackIndex();
+        // sService.GetCurrentPosition();
+        // sService.GetCurrentTrack();
+        // sService.GetCurrentTrackDuration();
+        // sService.HasNext();
+        // sService.HasPrevious();
     }
 }

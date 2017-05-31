@@ -160,26 +160,32 @@ namespace StreamingPlayer
                     StreamingAudioService ourService = binder.getService();
                     @{StreamingPlayerAndroidImpl:Of(_this)._service:Set(ourService)};
 
-                    ourService.setAudioClient(
-                        new StreamingAudioService.StreamingAudioClient()
+                    try
+                    {
+                        ourService.setAudioClient( new StreamingAudioService.StreamingAudioClient(ourService)
                         {
-                            public void OnStatusChanged()
+                            @Override public void OnStatusChanged()
                             {
                                 @{StreamingPlayerAndroidImpl:Of(_this).OnStatusChanged():Call()};
                             }
-                            public void OnHasPrevNextChanged()
+                            @Override public void OnHasPrevNextChanged()
                             {
                                 @{StreamingPlayerAndroidImpl:Of(_this).HasPrevNextChanged():Call()};
                             }
-                            public void OnCurrentTrackChanged()
+                            @Override public void OnCurrentTrackChanged()
                             {
                                 @{StreamingPlayerAndroidImpl:Of(_this).OnCurrentTrackChanged():Call()};
                             }
-                            public void OnInternalStatusChanged(int i)
+                            @Override public void OnInternalStatusChanged(int i)
                             {
                                 @{StreamingPlayerAndroidImpl:Of(_this).InternalStatusChanged(int):Call(i)};
                             }
                         });
+                    }
+                    catch (RemoteException e)
+                    {
+                        com.fuse.AndroidInteropHelper.UncheckedThrow(e);
+                    }
                     @{StreamingPlayerAndroidImpl:Of(_this).ConnectedToBackgroundService():Call()};
                 }
                 // Called when the connection with the service disconnects unexpectedly
