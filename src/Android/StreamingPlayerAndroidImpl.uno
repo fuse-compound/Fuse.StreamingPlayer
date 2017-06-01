@@ -18,6 +18,7 @@ namespace StreamingPlayer
                     "android.content.Intent",
                     "android.content.ServiceConnection",
                     "android.os.IBinder",
+                    "android.os.RemoteException",
                     "android.view.KeyEvent")]
     extern(Android) class StreamingPlayerAndroidImpl : IStreamingPlayer
     {
