@@ -14,7 +14,10 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.os.SystemClock;
+import android.support.v4.app.BundleCompat;
 import android.support.v4.app.NotificationManagerCompat;
+import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaButtonReceiver;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
@@ -38,6 +41,7 @@ public final class StreamingAudioService
 
     // State
     PlaybackStateCompat.Builder _playbackStateBuilder = new PlaybackStateCompat.Builder();
+    MediaMetadataCompat.Builder _metadataBuilder = new MediaMetadataCompat.Builder();
     AndroidPlayerState _state = AndroidPlayerState.Idle; // TODO can we merge this with android's state stuff?
     boolean _prepared = false;
 
@@ -147,6 +151,10 @@ public final class StreamingAudioService
                 {
                     Resume();
                 }
+                else if (action.equals("PlayTrack"))
+                {
+                    Play((Track) extras.getParcelable("track"));
+                }
             }
         });
 
@@ -229,16 +237,31 @@ public final class StreamingAudioService
 
         // update session
         _session.setPlaybackState(_playbackStateBuilder.build());
+        UpdateMetadata();
 
         // and the notification if needed
         if (notifKeycode != -1)
+        {
+            UpdateMetadata();
             ArtworkMediaNotification.Notify(_currentTrack, _session, this, notifIcon, notifText, notifKeycode);
+        }
 
         // and uno
         if (unoState != oldUnoState)
         {
             _state = unoState;
             _streamingAudioClient.OnInternalStatusChanged(unoState.toInt());
+        }
+    }
+
+    private void UpdateMetadata()
+    {
+        if (_currentTrack != null)
+        {
+            _metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_TITLE, _currentTrack.Name);
+            _metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, _currentTrack.Artist);
+            _metadataBuilder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, (long)_currentTrack.Duration);
+            _session.setMetadata(_metadataBuilder.build());
         }
     }
 
@@ -309,7 +332,7 @@ public final class StreamingAudioService
     // Actions
     //
 
-    public void Play(Track track)
+    private void Play(Track track)
     {
         if (_prepared)
         {
@@ -339,7 +362,7 @@ public final class StreamingAudioService
         }
     }
 
-    public void Resume()
+    private void Resume()
     {
         if (_prepared)
         {
@@ -360,7 +383,7 @@ public final class StreamingAudioService
         }
     }
 
-    public void Seek(int milliseconds)
+    private void Seek(int milliseconds)
     {
         if (_prepared)
         {
@@ -380,7 +403,7 @@ public final class StreamingAudioService
         _playlist.add(track);
     }
 
-    public void Next()
+    private void Next()
     {
         if (HasNext())
         {
@@ -389,7 +412,7 @@ public final class StreamingAudioService
         _streamingAudioClient.OnHasPrevNextChanged();
     }
 
-    public void Previous()
+    private void Previous()
     {
         if (HasPrevious())
         {
@@ -398,7 +421,7 @@ public final class StreamingAudioService
         _streamingAudioClient.OnHasPrevNextChanged();
     }
 
-    public void Pause()
+    private void Pause()
     {
         if (_state == AndroidPlayerState.Started)
         {
@@ -521,23 +544,29 @@ public final class StreamingAudioService
     }
 
     // Interfaces
-    public static abstract class StreamingAudioClient
+    public static abstract class StreamingAudioClient extends MediaControllerCompat.Callback
     {
         private MediaControllerCompat _controller;
+        private StreamingAudioService _service; // {TODO} must get rid of this before shipping
+        private PlaybackStateCompat _lastPlayerState;
 
-        public abstract void OnStatusChanged();
+        // public abstract void OnStatusChanged();
         public abstract void OnHasPrevNextChanged();
         public abstract void OnCurrentTrackChanged();
         public abstract void OnInternalStatusChanged(int i);
 
         public StreamingAudioClient(StreamingAudioService service) throws RemoteException
         {
+            _service = service; // {TODO} must get rid of this before shipping
             _controller = new MediaControllerCompat(service.getApplicationContext(), service._session.getSessionToken());
+            _controller.registerCallback(this);
         }
 
-        public final void Play()
+        public final void Play(Track track)
         {
-            _controller.getTransportControls().play();
+            Bundle bTrack = new Bundle();
+            bTrack.putParcelable("track", track);
+            _controller.getTransportControls().sendCustomAction("PlayTrack", bTrack);
         }
 
         public final void Resume()
@@ -570,15 +599,56 @@ public final class StreamingAudioService
             _controller.getTransportControls().seekTo(position);
         }
 
-        // Service.AddTrack(jTrack);
-        // sService.Play((Track)track);
-        // sService.SetPlaylist(tracks);
+        public final int CurrentTrackIndex()
+        {
+            return _service.CurrentTrackIndex();
+        }
 
-        // sService.CurrentTrackIndex();
-        // sService.GetCurrentPosition();
-        // sService.GetCurrentTrack();
-        // sService.GetCurrentTrackDuration();
-        // sService.HasNext();
-        // sService.HasPrevious();
+        public final double GetCurrentPosition()
+        {
+            long currentPosition = _lastPlayerState.getPosition();
+            if (_lastPlayerState.getState() != PlaybackStateCompat.STATE_PAUSED) {
+                long timeDelta = SystemClock.elapsedRealtime() - _lastPlayerState.getLastPositionUpdateTime();
+                currentPosition += (int) timeDelta * _lastPlayerState.getPlaybackSpeed();
+            }
+            return currentPosition;
+        }
+
+        public final Track GetCurrentTrack()
+        {
+            return _service.GetCurrentTrack();
+        }
+
+        public final double GetCurrentTrackDuration()
+        {
+            return _service.GetCurrentTrackDuration();
+        }
+
+        public final boolean HasNext()
+        {
+            return _service.HasNext();
+        }
+
+        public final boolean HasPrevious()
+        {
+            return _service.HasPrevious();
+        }
+
+        public void SetPlaylist(Track[] tracks)
+        {
+            _service.SetPlaylist(tracks);
+        }
+
+        public void AddTrack(Track track)
+        {
+            _service.AddTrack(track);
+        }
+
+        @Override
+        public void onPlaybackStateChanged(PlaybackStateCompat state)
+        {
+            super.onPlaybackStateChanged(state);
+            _lastPlayerState = state;
+        }
     }
 }

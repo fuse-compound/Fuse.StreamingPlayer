@@ -28,6 +28,7 @@ namespace StreamingPlayer
         Java.Object _service; //StreamingAudioService
         Java.Object _serviceConnection; // ServiceConnection
         Java.Object _binder; // StreamingAudioService.LocalBinder
+        Java.Object _client;
         PlayerStatus _status = PlayerStatus.Stopped;
 
         public bool IsConnected
@@ -37,22 +38,22 @@ namespace StreamingPlayer
 
         public bool HasNext
         {
-            get { return IsConnected ? GetHasNextImpl(_service) : false; }
+            get { return IsConnected ? GetHasNextImpl(_client) : false; }
         }
 
         public bool HasPrevious
         {
-            get { return IsConnected ? GetHasPreviousImpl(_service) : false; }
+            get { return IsConnected ? GetHasPreviousImpl(_client) : false; }
         }
 
         public double Progress
         {
-            get { return IsConnected ? (GetProgress(_service) / 1000.0) : 0; }
+            get { return IsConnected ? (GetProgress(_client) / 1000.0) : 0; }
         }
 
         public double Duration
         {
-            get { return IsConnected ? (GetDuration(_service) / 1000.0) : 0; }
+            get { return IsConnected ? (GetDuration(_client) / 1000.0) : 0; }
         }
 
         public Track CurrentTrack
@@ -60,7 +61,7 @@ namespace StreamingPlayer
             get
             {
                 if (IsConnected) {
-                    var currentTrackJava = GetCurrentTrackImpl(_service);
+                    var currentTrackJava = GetCurrentTrackImpl(_client);
                     if (currentTrackJava != null)
                     {
                         var id = TrackAndroidImpl.GetId(currentTrackJava);
@@ -148,27 +149,28 @@ namespace StreamingPlayer
         [Foreign(Language.Java)]
         Java.Object CreateServiceConnection()
         @{
-            return new ServiceConnection()
+            ServiceConnection connection =  new ServiceConnection()
             {
                 public void onServiceConnected(ComponentName className, IBinder service)
                 {
                     // Because we have bound to an explicit
                     // service that is running in our own process, we can
                     // cast its IBinder to a concrete class and directly access it.
+                    StreamingAudioService.StreamingAudioClient client = null;
                     StreamingAudioService.LocalBinder binder = (StreamingAudioService.LocalBinder)service;
-                    @{StreamingPlayerAndroidImpl:Of(_this)._binder:Set(binder)};
-
                     StreamingAudioService ourService = binder.getService();
-                    @{StreamingPlayerAndroidImpl:Of(_this)._service:Set(ourService)};
 
+                    // The client is how we communicate with the service, this makes sure our events flow
+                    // through the same channels as all other events from the system's controls and thus
+                    // simplify our handling logic
                     try
                     {
-                        ourService.setAudioClient( new StreamingAudioService.StreamingAudioClient(ourService)
+                        client = new StreamingAudioService.StreamingAudioClient(ourService)
                         {
-                            @Override public void OnStatusChanged()
-                            {
-                                @{StreamingPlayerAndroidImpl:Of(_this).OnStatusChanged():Call()};
-                            }
+                            // @Override public void OnStatusChanged()
+                            // {
+                            //     @{StreamingPlayerAndroidImpl:Of(_this).OnStatusChanged():Call()};
+                            // }
                             @Override public void OnHasPrevNextChanged()
                             {
                                 @{StreamingPlayerAndroidImpl:Of(_this).HasPrevNextChanged():Call()};
@@ -181,12 +183,19 @@ namespace StreamingPlayer
                             {
                                 @{StreamingPlayerAndroidImpl:Of(_this).InternalStatusChanged(int):Call(i)};
                             }
-                        });
+                        };
                     }
                     catch (RemoteException e)
                     {
                         com.fuse.AndroidInteropHelper.UncheckedThrow(e);
                     }
+
+                    // This is so the service can fire the callbacks
+                    ourService.setAudioClient(client);
+
+                    @{StreamingPlayerAndroidImpl:Of(_this)._service:Set(ourService)};
+                    @{StreamingPlayerAndroidImpl:Of(_this)._binder:Set(binder)};
+                    @{StreamingPlayerAndroidImpl:Of(_this)._client:Set(client)};
                     @{StreamingPlayerAndroidImpl:Of(_this).ConnectedToBackgroundService():Call()};
                 }
                 // Called when the connection with the service disconnects unexpectedly
@@ -195,6 +204,7 @@ namespace StreamingPlayer
                     debug_log("Music player handle service disconnection");
                 }
             };
+            return connection;
         @}
 
         //------------------------------------------------------------
@@ -278,7 +288,7 @@ namespace StreamingPlayer
             {
                 var javaTrack = ToJavaTrack(track.Id, track.Name, track.Artist, track.Url, track.ArtworkUrl, track.Duration);
                 Status = PlayerStatus.Loading;
-                PlayImpl(_service, javaTrack);
+                PlayImpl(_client, javaTrack);
                 _pendingPlay = false;
             } else {
                 _pendingPlay = true;
@@ -287,10 +297,10 @@ namespace StreamingPlayer
         }
 
         [Foreign(Language.Java)]
-        void PlayImpl(Java.Object service, Java.Object track)
+        void PlayImpl(Java.Object client, Java.Object track)
         @{
-            StreamingAudioService sService = (StreamingAudioService)service;
-            sService.Play((Track)track);
+            StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
+            sClient.Play((Track)track);
         @}
 
 
@@ -312,15 +322,15 @@ namespace StreamingPlayer
             if (IsConnected)
             {
                 Status = PlayerStatus.Playing;
-                ResumeImpl(_service);
+                ResumeImpl(_client);
             }
         }
 
         [Foreign(Language.Java)]
-        void ResumeImpl(Java.Object service)
+        void ResumeImpl(Java.Object client)
         @{
-            StreamingAudioService sService = (StreamingAudioService)service;
-            sService.Resume();
+            StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
+            sClient.Resume();
         @}
 
         public void Seek(double toProgress)
@@ -328,29 +338,29 @@ namespace StreamingPlayer
             if (IsConnected)
             {
                 var timeMS = (int)(Duration * toProgress * 1000);
-                SeekImpl(_service, timeMS);
+                SeekImpl(_client, timeMS);
             }
         }
 
         [Foreign(Language.Java)]
-        void SeekImpl(Java.Object service, int timeMS)
+        void SeekImpl(Java.Object client, int timeMS)
         @{
-            StreamingAudioService sService = (StreamingAudioService)service;
-            sService.Seek(timeMS);
+            StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
+            sClient.Seek(timeMS);
         @}
 
         [Foreign(Language.Java)]
-        double GetDuration(Java.Object service)
+        double GetDuration(Java.Object client)
         @{
-            StreamingAudioService sService = (StreamingAudioService)service;
-            return sService.GetCurrentTrackDuration();
+            StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
+            return sClient.GetCurrentTrackDuration();
         @}
 
         [Foreign(Language.Java)]
-        double GetProgress(Java.Object service)
+        double GetProgress(Java.Object client)
         @{
-            StreamingAudioService sService = (StreamingAudioService)service;
-            return sService.GetCurrentPosition();
+            StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
+            return sClient.GetCurrentPosition();
         @}
 
         public void Pause()
@@ -358,15 +368,15 @@ namespace StreamingPlayer
             if (IsConnected)
             {
                 Status = PlayerStatus.Paused;
-                PauseImpl(_service);
+                PauseImpl(_client);
             }
         }
 
         [Foreign(Language.Java)]
-        void PauseImpl(Java.Object service)
+        void PauseImpl(Java.Object client)
         @{
-            StreamingAudioService sService = (StreamingAudioService)service;
-            sService.Pause();
+            StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
+            sClient.Pause();
         @}
 
         public void Stop()
@@ -374,15 +384,15 @@ namespace StreamingPlayer
             if (IsConnected)
             {
                 Status = PlayerStatus.Paused;
-                StopImpl(_service);
+                StopImpl(_client);
             }
         }
 
         [Foreign(Language.Java)]
-        void StopImpl(Java.Object service)
+        void StopImpl(Java.Object client)
         @{
-            StreamingAudioService sService = (StreamingAudioService)service;
-            sService.Stop();
+            StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
+            sClient.Stop();
         @}
 
 
@@ -412,7 +422,7 @@ namespace StreamingPlayer
                     durations[i] = t.Duration;
                 }
                 debug_log("Android: set current playlist");
-                SetPlaylistImpl(_service, ids, names, artists, urls, artworkUrls, durations);
+                SetPlaylistImpl(_client, ids, names, artists, urls, artworkUrls, durations);
             } else {
                 debug_log("Android: caching as _tempPlaylist");
                 _tempPlaylist = tracks;
@@ -420,7 +430,7 @@ namespace StreamingPlayer
         }
 
         [Foreign(Language.Java)]
-        void SetPlaylistImpl(Java.Object service,
+        void SetPlaylistImpl(Java.Object client,
                              int[] ids,
                              string[] names,
                              string[] artists,
@@ -428,7 +438,6 @@ namespace StreamingPlayer
                              string[] artworkUrls,
                              double[] durations)
         @{
-            StreamingAudioService sService = (StreamingAudioService)service;
             int[] i = ids.copyArray();
             String[] n = names.copyArray();
             String[] art = artists.copyArray();
@@ -443,50 +452,50 @@ namespace StreamingPlayer
                 tracks[j] = t;
             }
 
-            sService.SetPlaylist(tracks);
+            StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
+            sClient.SetPlaylist(tracks);
         @}
 
         public int Next()
         {
             if (IsConnected)
-                return NextImpl(_service);
+                return NextImpl(_client);
             else
                 return 0;
         }
 
         [Foreign(Language.Java)]
-        int NextImpl(Java.Object service)
+        int NextImpl(Java.Object client)
         @{
-            StreamingAudioService sService = (StreamingAudioService)service;
-            sService.Next();
-            return sService.CurrentTrackIndex();
+            StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
+            sClient.Next();
+            return sClient.CurrentTrackIndex();
         @}
 
         public int Previous()
         {
             if (IsConnected)
-                return PreviousImpl(_service);
+                return PreviousImpl(_client);
             else
                 return 0;
         }
 
         [Foreign(Language.Java)]
-        int PreviousImpl(Java.Object service)
+        int PreviousImpl(Java.Object client)
         @{
-            StreamingAudioService sService = (StreamingAudioService)service;
-            sService.Previous();
-            return sService.CurrentTrackIndex();
+            StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
+            sClient.Previous();
+            return sClient.CurrentTrackIndex();
         @}
 
         public void AddTrack(Track track)
         {
             if (IsConnected)
-                AddTrackImpl(_service, track);
+                AddTrackImpl(_client, track);
         }
         [Foreign(Language.Java)]
-        void AddTrackImpl(Java.Object service, object track)
+        void AddTrackImpl(Java.Object client, object track)
         @{
-            StreamingAudioService sService = (StreamingAudioService)service;
             int id = @{Track:Of(track).Id:Get()};
             String name = @{Track:Of(track).Name:Get()};
             String artist = @{Track:Of(track).Artist:Get()};
@@ -494,28 +503,30 @@ namespace StreamingPlayer
             String artworkUrl = @{Track:Of(track).ArtworkUrl:Get()};
             double duration = @{Track:Of(track).Duration:Get()};
             Track jTrack = new Track(id, name, artist, url, artworkUrl, duration);
-            sService.AddTrack(jTrack);
+
+            StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
+            sClient.AddTrack(jTrack);
         @}
 
         [Foreign(Language.Java)]
-        Java.Object GetCurrentTrackImpl(Java.Object service)
+        Java.Object GetCurrentTrackImpl(Java.Object client)
         @{
-            StreamingAudioService sService = (StreamingAudioService)service;
-            return sService.GetCurrentTrack();
+            StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
+            return sClient.GetCurrentTrack();
         @}
 
         [Foreign(Language.Java)]
-        bool GetHasNextImpl(Java.Object service)
+        bool GetHasNextImpl(Java.Object client)
         @{
-            StreamingAudioService sService = (StreamingAudioService)service;
-            return sService.HasNext();
+            StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
+            return sClient.HasNext();
         @}
 
         [Foreign(Language.Java)]
-        bool GetHasPreviousImpl(Java.Object service)
+        bool GetHasPreviousImpl(Java.Object client)
         @{
-            StreamingAudioService sService = (StreamingAudioService)service;
-            return sService.HasPrevious();
+            StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
+            return sClient.HasPrevious();
         @}
 
     }

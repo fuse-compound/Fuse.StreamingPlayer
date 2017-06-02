@@ -50,34 +50,30 @@ public final class ArtworkMediaNotification
         }
     }
 
-    private Track _currentTrack;
     private MediaSessionCompat _session;
     private StreamingAudioService _service;
     private int _primaryActionIcon;
     private String _primaryActionTitle;
     private int _primaryActionKeyEvent;
+    private MediaMetadataCompat.Builder _metadataBuilder;
 
-    private ArtworkMediaNotification(Track track, MediaSessionCompat session, StreamingAudioService service, String urlStr,
+    private ArtworkMediaNotification(MediaMetadataCompat metadata, MediaSessionCompat session, StreamingAudioService service, String urlStr,
                                      int primaryActionIcon, String primaryActionTitle, int primaryActionKeyEvent)
     {
         _session = session;
-        _currentTrack = track;
         _service = service;
         _primaryActionIcon = primaryActionIcon;
         _primaryActionTitle = primaryActionTitle;
         _primaryActionKeyEvent = primaryActionKeyEvent;
+        _metadataBuilder = new MediaMetadataCompat.Builder(metadata);
         new DownloadArtworkBitmapTask().execute(urlStr);
     }
 
     public void setArtworkBitmap(Bitmap bmp)
     {
         //This lets the album art be visible as the background while in the lock screen
-        MediaMetadataCompat.Builder metadataBuilder = new MediaMetadataCompat.Builder();
-        metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_TITLE, _currentTrack.Name);
-        metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, _currentTrack.Artist);
-        metadataBuilder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, (long)_currentTrack.Duration);
-        metadataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bmp);
-        _session.setMetadata(metadataBuilder.build());
+        _metadataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bmp);
+        _session.setMetadata(_metadataBuilder.build());
 
         // Time to make the notifications
         NotificationCompat.Builder builder = MediaStyleHelper.makeBuilder(_service, _session);
@@ -112,6 +108,6 @@ public final class ArtworkMediaNotification
                               int primaryActionIcon, String primaryActionTitle, int primaryActionKeyEvent)
     {
         //Async task for getting artwork bitmap and assigning it to the media session
-        new ArtworkMediaNotification(track, session, service, track.ArtworkUrl, primaryActionIcon, primaryActionTitle, primaryActionKeyEvent);
+        new ArtworkMediaNotification(service._metadataBuilder.build(), session, service, track.ArtworkUrl, primaryActionIcon, primaryActionTitle, primaryActionKeyEvent);
     }
 }
