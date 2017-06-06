@@ -50,6 +50,14 @@ public final class StreamingAudioService
     ArrayList<Track> _playlist = new ArrayList<Track>();
     Track _currentTrack;
 
+    public synchronized Track GetCurrentTrack()
+    {
+        return _currentTrack;
+    }
+    public synchronized void SetCurrentTrack(Track track)
+    {
+        _currentTrack = track;
+    }
 
     public void setAudioClient(StreamingAudioClient bgp)
     {
@@ -114,7 +122,7 @@ public final class StreamingAudioService
             public void onSkipToNext()
             {
                 super.onSkipToNext();
-                Logger.Log("Skipping from media notification: " + _currentTrack.Name);
+                Logger.Log("Skipping from media notification: " + GetCurrentTrack().Name);
                 Next();
             }
 
@@ -154,6 +162,14 @@ public final class StreamingAudioService
                 else if (action.equals("PlayTrack"))
                 {
                     Play((Track) extras.getParcelable("track"));
+                }
+                else if (action.equals("AddTrack"))
+                {
+                    AddTrack((Track) extras.getParcelable("track"));
+                }
+                else if (action.equals("SetPlaylist"))
+                {
+                    SetPlaylist((Track[])extras.getParcelableArray("tracks"));
                 }
             }
         });
@@ -243,7 +259,7 @@ public final class StreamingAudioService
         if (notifKeycode != -1)
         {
             UpdateMetadata();
-            ArtworkMediaNotification.Notify(_currentTrack, _session, this, notifIcon, notifText, notifKeycode);
+            ArtworkMediaNotification.Notify(GetCurrentTrack(), _session, this, notifIcon, notifText, notifKeycode);
         }
 
         // and uno
@@ -256,11 +272,11 @@ public final class StreamingAudioService
 
     private void UpdateMetadata()
     {
-        if (_currentTrack != null)
+        if (GetCurrentTrack() != null)
         {
-            _metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_TITLE, _currentTrack.Name);
-            _metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, _currentTrack.Artist);
-            _metadataBuilder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, (long)_currentTrack.Duration);
+            _metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_TITLE, GetCurrentTrack().Name);
+            _metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, GetCurrentTrack().Artist);
+            _metadataBuilder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, (long)GetCurrentTrack().Duration);
             _session.setMetadata(_metadataBuilder.build());
         }
     }
@@ -284,48 +300,6 @@ public final class StreamingAudioService
     private void stopNoisyReciever()
     {
         unregisterReceiver(_noisyReceiver);
-    }
-
-
-    public int CurrentTrackIndex()
-    {
-        return _playlist.indexOf(_currentTrack);
-    }
-
-    public double GetCurrentPosition()
-    {
-        if (_prepared)
-        {
-            return _player.getCurrentPosition();
-        }
-        return 0.0;
-    }
-
-    public double GetCurrentTrackDuration()
-    {
-        if (_prepared)
-        {
-            return _player.getDuration();
-        }
-        return 0.0;
-    }
-
-    public Track GetCurrentTrack()
-    {
-        return _currentTrack;
-    }
-
-    public boolean HasNext()
-    {
-        int currentIndex = CurrentTrackIndex();
-        int playlistSize = _playlist.size();
-        return currentIndex > -1 && currentIndex < playlistSize - 1;
-    }
-
-    public boolean HasPrevious()
-    {
-        int currentIndex = CurrentTrackIndex();
-        return currentIndex > 0;
     }
 
     //
@@ -354,7 +328,7 @@ public final class StreamingAudioService
             Logger.Log("Exception while setting MediaPlayer DataSource");
         }
 
-        _currentTrack = track;
+        SetCurrentTrack(track);
         if (_streamingAudioClient != null)
         {
             _streamingAudioClient.OnCurrentTrackChanged();
@@ -391,14 +365,14 @@ public final class StreamingAudioService
         }
     }
 
-    public void SetPlaylist(Track[] tracks)
+    private void SetPlaylist(Track[] tracks)
     {
         _playlist.clear();
         Collections.addAll(_playlist, tracks);
         _streamingAudioClient.OnHasPrevNextChanged();
     }
 
-    public void AddTrack(Track track)
+    private void AddTrack(Track track)
     {
         _playlist.add(track);
     }
@@ -430,13 +404,47 @@ public final class StreamingAudioService
         }
     }
 
-    public void Stop()
+    private void Stop()
     {
         _prepared = false;
         _player.stop();
         _player.reset();
         _audioManager.abandonAudioFocus(this);
         setPlaybackState(PlaybackStateCompat.STATE_STOPPED, 0);
+    }
+
+    //
+    // Public Functions
+    //
+    // These will need to be removed. See the note in the StreamingAudioClient class for why
+    // these exist.
+    //
+
+    public synchronized int CurrentTrackIndex()
+    {
+        return _playlist.indexOf(GetCurrentTrack());
+    }
+
+    public synchronized double GetCurrentTrackDuration()
+    {
+        if (_prepared)
+        {
+            return _player.getDuration();
+        }
+        return 0.0;
+    }
+
+    public synchronized boolean HasNext()
+    {
+        int currentIndex = CurrentTrackIndex();
+        int playlistSize = _playlist.size();
+        return currentIndex > -1 && currentIndex < playlistSize - 1;
+    }
+
+    public synchronized boolean HasPrevious()
+    {
+        int currentIndex = CurrentTrackIndex();
+        return currentIndex > 0;
     }
 
     //
@@ -503,16 +511,12 @@ public final class StreamingAudioService
         }
     }
 
-    //
-    // Events received from controls or other systems
-    //
-    // Simply routes everything through to the media session callback
-    // then all we have to do is control everything via MEDIA_BUTTON events
-    // (this is the recommended googly way
-    //
     @Override
     public int onStartCommand(Intent intent, int flags, int startId)
     {
+        // Simply routes everything through to the media session callback
+        // then all we have to do is control everything via MEDIA_BUTTON events
+        // (this is the recommended googly way)
         MediaButtonReceiver.handleIntent(_session, intent);
         return super.onStartCommand(intent, flags, startId);
     }
@@ -547,7 +551,7 @@ public final class StreamingAudioService
     public static abstract class StreamingAudioClient extends MediaControllerCompat.Callback
     {
         private MediaControllerCompat _controller;
-        private StreamingAudioService _service; // {TODO} must get rid of this before shipping
+        private StreamingAudioService _service;  // {TODO} See note below in
         private PlaybackStateCompat _lastPlayerState;
 
         // public abstract void OnStatusChanged();
@@ -557,7 +561,7 @@ public final class StreamingAudioService
 
         public StreamingAudioClient(StreamingAudioService service) throws RemoteException
         {
-            _service = service; // {TODO} must get rid of this before shipping
+            _service = service; // {TODO} See note below in
             _controller = new MediaControllerCompat(service.getApplicationContext(), service._session.getSessionToken());
             _controller.registerCallback(this);
         }
@@ -599,11 +603,6 @@ public final class StreamingAudioService
             _controller.getTransportControls().seekTo(position);
         }
 
-        public final int CurrentTrackIndex()
-        {
-            return _service.CurrentTrackIndex();
-        }
-
         public final double GetCurrentPosition()
         {
             long currentPosition = _lastPlayerState.getPosition();
@@ -612,6 +611,48 @@ public final class StreamingAudioService
                 currentPosition += (int) timeDelta * _lastPlayerState.getPlaybackSpeed();
             }
             return currentPosition;
+        }
+
+        public void SetPlaylist(Track[] tracks)
+        {
+            Bundle bTrack = new Bundle();
+            bTrack.putParcelableArray("tracks", tracks);
+            _controller.getTransportControls().sendCustomAction("SetPlaylist", bTrack);
+        }
+
+        public void AddTrack(Track track)
+        {
+            Bundle bTrack = new Bundle();
+            bTrack.putParcelable("track", track);
+            _controller.getTransportControls().sendCustomAction("AddTrack", bTrack);
+        }
+
+        @Override
+        public void onPlaybackStateChanged(PlaybackStateCompat state)
+        {
+            super.onPlaybackStateChanged(state);
+            _lastPlayerState = state;
+        }
+
+        //
+        // {TODO} This sucks, we are force to do this hacky stuff as the playlist is not controlled
+        //        by the android api.
+        //        What I want to do is use the MediaSession's queue so that we dont have to manage
+        //        it, we dont need our own track items and also so things work with more google
+        //        systems.
+        //        However android's QueueItem is final and is missing a bunch of data we want
+        //        (e.g. artist). This means we still need to keep our own playlist so we have
+        //        the details we need to populate the metadata. If we only allowed local files then
+        //        we wouldnt need to provide our own metadata as we could use the metadata querying
+        //        system of the platform, however we also need streaming from the web.
+        //
+        //        I'm pretty sick on android audio right now and just want to get a v1 out. We can
+        //        revisit this over time to make is solid
+        //
+
+        public final int CurrentTrackIndex()
+        {
+            return _service.CurrentTrackIndex();
         }
 
         public final Track GetCurrentTrack()
@@ -632,23 +673,6 @@ public final class StreamingAudioService
         public final boolean HasPrevious()
         {
             return _service.HasPrevious();
-        }
-
-        public void SetPlaylist(Track[] tracks)
-        {
-            _service.SetPlaylist(tracks);
-        }
-
-        public void AddTrack(Track track)
-        {
-            _service.AddTrack(track);
-        }
-
-        @Override
-        public void onPlaybackStateChanged(PlaybackStateCompat state)
-        {
-            super.onPlaybackStateChanged(state);
-            _lastPlayerState = state;
         }
     }
 }
