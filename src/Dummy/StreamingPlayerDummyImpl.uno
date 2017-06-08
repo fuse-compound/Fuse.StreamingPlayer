@@ -29,6 +29,5 @@ namespace StreamingPlayer
         static public void Seek(double toProgress) {}
         static public int Previous() { return 0; }
         static public int Next() { return 0; }
-        static public void AddTrack(Track track) {}
     }
 }

@@ -163,10 +163,6 @@ public final class StreamingAudioService
                 {
                     Play((Track) extras.getParcelable("track"));
                 }
-                else if (action.equals("AddTrack"))
-                {
-                    AddTrack((Track) extras.getParcelable("track"));
-                }
                 else if (action.equals("SetPlaylist"))
                 {
                     SetPlaylist((Track[])extras.getParcelableArray("tracks"));
@@ -608,13 +604,6 @@ public final class StreamingAudioService
             Bundle bTrack = new Bundle();
             bTrack.putParcelableArray("tracks", tracks);
             _controller.getTransportControls().sendCustomAction("SetPlaylist", bTrack);
-        }
-
-        public void AddTrack(Track track)
-        {
-            Bundle bTrack = new Bundle();
-            bTrack.putParcelable("track", track);
-            _controller.getTransportControls().sendCustomAction("AddTrack", bTrack);
         }
 
         @Override

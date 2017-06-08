@@ -475,27 +475,6 @@ namespace StreamingPlayer
             return sClient.CurrentTrackIndex();
         @}
 
-        static public void AddTrack(Track track)
-        {
-            if (IsConnected)
-                AddTrackImpl(_client, track);
-        }
-
-        [Foreign(Language.Java)]
-        static void AddTrackImpl(Java.Object client, object track)
-        @{
-            int id = @{Track:Of(track).Id:Get()};
-            String name = @{Track:Of(track).Name:Get()};
-            String artist = @{Track:Of(track).Artist:Get()};
-            String url = @{Track:Of(track).Url:Get()};
-            String artworkUrl = @{Track:Of(track).ArtworkUrl:Get()};
-            double duration = @{Track:Of(track).Duration:Get()};
-            Track jTrack = new Track(id, name, artist, url, artworkUrl, duration);
-
-            StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
-            sClient.AddTrack(jTrack);
-        @}
-
         [Foreign(Language.Java)]
         static Java.Object GetCurrentTrackImpl(Java.Object client)
         @{

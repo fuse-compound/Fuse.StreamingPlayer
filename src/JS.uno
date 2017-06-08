@@ -34,7 +34,6 @@ namespace StreamingPlayer
             Resource.SetGlobalKey(_instance, "FuseJS/StreamingPlayer");
             AddMember(new NativeFunction("next", (NativeCallback)Next));
             AddMember(new NativeFunction("previous", (NativeCallback)Previous));
-            AddMember(new NativeFunction("addTrack", (NativeCallback)AddTrack));
             AddMember(new NativeFunction("setPlaylist", (NativeCallback)SetPlaylist));
 
             AddMember(new NativeProperty<bool, bool>("hasNext", GetHasNext, null, null));
@@ -105,18 +104,6 @@ namespace StreamingPlayer
             return StreamingPlayer.Previous();
         }
 
-        public object AddTrack(Context c, object[] args)
-        {
-            if (!_playerInitialized) return null;
-            foreach (var a in args)
-            {
-                var track = Marshal.ToType<Track>(a);
-                if (a != null)
-                    StreamingPlayer.AddTrack(track);
-            }
-            return null;
-        }
-
         public object SetPlaylist(Context c, object[] args)
         {
             if (!_playerInitialized) return null;
@@ -129,7 +116,7 @@ namespace StreamingPlayer
                     var a = trackArray[i];
                     var track = Marshal.ToType<Track>(a);
                     if (a != null)
-                        StreamingPlayer.AddTrack(track);
+                        tracks.Add(track);
                 }
                 StreamingPlayer.SetPlaylist(tracks.ToArray());
             }

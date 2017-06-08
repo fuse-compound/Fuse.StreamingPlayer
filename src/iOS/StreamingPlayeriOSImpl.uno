@@ -368,12 +368,6 @@ namespace StreamingPlayer
             OnHasNextOrHasPreviousChanged();
         }
 
-        static public void AddTrack(Track track)
-        {
-            _tracks.Add(track);
-            OnHasNextOrHasPreviousChanged();
-        }
-
         static public void SetPlaylist(Track[] tracks)
         {
             debug_log "iOS: setting playlist";
