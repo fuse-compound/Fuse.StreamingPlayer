@@ -9,17 +9,13 @@ using Uno.Compiler.ExportTargetInterop;
 namespace StreamingPlayer
 {
     [UXGlobalModule]
-    public class PlaylistModule : NativeModule
+    public class PlaylistModule : NativeEventEmitterModule
     {
 
         static PlaylistModule _instance;
-
-        NativeEvent _statusChanged;
-        NativeEvent _currentTrackChanged;
-
         static bool _playerInitialized;
 
-        public PlaylistModule()
+        public PlaylistModule(): base(true, "statusChanged", "currentTrackChanged")
         {
             if (_instance != null) return;
             _instance = this;
@@ -50,11 +46,13 @@ namespace StreamingPlayer
             AddMember(new NativeProperty<double,double>("progress", GetProgress));
             AddMember(new NativeProperty<Track,Fuse.Scripting.Object>("currentTrack", GetCurrentTrack, null, Track.ToJSObject));
 
-            _statusChanged = new NativeEvent("statusChanged");
-            AddMember(_statusChanged);
+            var statusChanged = new NativeEvent("statusChanged");
+            On("statusChanged", statusChanged);
+            AddMember(statusChanged);
 
-            _currentTrackChanged = new NativeEvent("currentTrackChanged");
-            AddMember(_currentTrackChanged);
+            var currentTrackChanged = new NativeEvent("currentTrackChanged");
+            On("currentTrackChanged", currentTrackChanged);
+            AddMember(currentTrackChanged);
 
             StreamingPlayer.StatusChanged += OnStatusChanged;
             StreamingPlayer.CurrentTrackChanged += OnCurrentTrackChanged;
@@ -80,15 +78,12 @@ namespace StreamingPlayer
 
         void OnStatusChanged(PlayerStatus status)
         {
-            if (CanCallBackToJS)
-                _statusChanged.RaiseAsync(status.Stringify());
+            Emit("statusChanged", status.Stringify());
         }
 
         void OnCurrentTrackChanged()
         {
-            if (CanCallBackToJS) {
-                _currentTrackChanged.RaiseAsync();
-            }
+            Emit("statusChanged");
         }
 
         public object Next(Context c, object[] args)
