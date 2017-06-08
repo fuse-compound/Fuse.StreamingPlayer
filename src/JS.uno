@@ -9,23 +9,23 @@ using Uno.Compiler.ExportTargetInterop;
 namespace StreamingPlayer
 {
     [UXGlobalModule]
-    public class PlaylistModule : NativeEventEmitterModule
+    public class StreamingPlayerModule : NativeEventEmitterModule
     {
 
-        static PlaylistModule _instance;
+        static StreamingPlayerModule _instance;
         static bool _playerInitialized;
 
+        static int _playlistLength = 0;
         static int _currentTrackIndex = -1;
         static int GetCurrentTrackIndex() { return _currentTrackIndex; }
 
-        public PlaylistModule(): base(true, "statusChanged", "currentTrackChanged")
+        public StreamingPlayerModule(): base(true, "statusChanged", "currentTrackChanged")
         {
             if (_instance != null) return;
             _instance = this;
 
-            if (!_playerInitialized) {
+            if (!_playerInitialized)
                 _playerInitialized = StreamingPlayer.Init();
-            }
 
             if (!Marshal.CanConvertClass(typeof(Track)))
                 Marshal.AddConverter(new TrackConverter());
@@ -34,10 +34,6 @@ namespace StreamingPlayer
             AddMember(new NativeFunction("next", (NativeCallback)Next));
             AddMember(new NativeFunction("previous", (NativeCallback)Previous));
             AddMember(new NativeFunction("setPlaylist", (NativeCallback)SetPlaylist));
-
-            AddMember(new NativeProperty<bool, bool>("hasNext", GetHasNext, null, null));
-            AddMember(new NativeProperty<bool, bool>("hasPrevious", GetHasPrevious, null, null));
-
             AddMember(new NativeFunction("play", (NativeCallback)Play));
             AddMember(new NativeFunction("pause", (NativeCallback)Pause));
             AddMember(new NativeFunction("resume", (NativeCallback)Resume));
@@ -45,9 +41,14 @@ namespace StreamingPlayer
             AddMember(new NativeFunction("seek", (NativeCallback)Seek));
 
             AddMember(new NativeProperty<PlayerStatus,string>("status", GetStatus, null, PlayerStatusConverter.Convert));
+
+            // we let the impl decide how to report this
             AddMember(new NativeProperty<double,double>("duration", GetDuration));
             AddMember(new NativeProperty<double,double>("progress", GetProgress));
+
             AddMember(new NativeProperty<int,int>("currentTrack", GetCurrentTrackIndex));
+            AddMember(new NativeProperty<bool, bool>("hasNext", GetHasNext, null, null));
+            AddMember(new NativeProperty<bool, bool>("hasPrevious", GetHasPrevious, null, null));
 
             var statusChanged = new NativeEvent("statusChanged");
             On("statusChanged", statusChanged);
@@ -108,23 +109,15 @@ namespace StreamingPlayer
                     if (a != null)
                         tracks.Add(track);
                 }
+                _playlistLength = tracks.Count;
                 StreamingPlayer.SetPlaylist(tracks.ToArray());
             }
             else
+            {
+                _playlistLength = 0;
                 StreamingPlayer.SetPlaylist(null);
+            }
             return null;
-        }
-
-        bool GetHasNext()
-        {
-            if (!_playerInitialized) return false;
-            return StreamingPlayer.HasNext;
-        }
-
-        bool GetHasPrevious()
-        {
-            if (!_playerInitialized) return false;
-            return StreamingPlayer.HasPrevious;
         }
 
         PlayerStatus GetStatus()
@@ -180,6 +173,23 @@ namespace StreamingPlayer
             if (!_playerInitialized) return null;
             StreamingPlayer.Stop();
             return null;
+        }
+
+        //
+        // GetHasNext & GetHasPrevious are really just convenience functions. They dont communicate
+        // with the play, they just rely on what can be currently know of the player state
+        //
+        bool GetHasNext()
+        {
+            if (!_playerInitialized) return false;
+            return _currentTrackIndex + 1 < _playlistLength;
+            return StreamingPlayer.HasNext;
+        }
+
+        bool GetHasPrevious()
+        {
+            if (!_playerInitialized) return false;
+            return _currentTrackIndex - 1 >= 0;
         }
     }
 }
