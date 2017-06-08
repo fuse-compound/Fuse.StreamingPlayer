@@ -33,7 +33,7 @@ namespace StreamingPlayer
         static List<Track> _tracks = new List<Track>();
 
         static public event StatusChangedHandler StatusChanged;
-        static public event Action CurrentTrackChanged;
+        static public event Action<int> CurrentTrackChanged;
         static internal event Action<bool> HasNextChanged;
         static internal event Action<bool> HasPreviousChanged;
 
@@ -362,9 +362,8 @@ namespace StreamingPlayer
 
         static void OnCurrentTrackChanged()
         {
-            if (CurrentTrackChanged != null) {
-                CurrentTrackChanged();
-            }
+            if (CurrentTrackChanged != null)
+                CurrentTrackChanged(_tracks.IndexOf(_currentTrack));
             OnHasNextOrHasPreviousChanged();
         }
 

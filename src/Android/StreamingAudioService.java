@@ -542,7 +542,7 @@ public final class StreamingAudioService
         private StreamingAudioService _service;  // {TODO} See note below in
         private PlaybackStateCompat _lastPlayerState;
 
-        public abstract void OnCurrentTrackChanged();
+        public abstract void OnCurrentTrackChanged(int index);
         public abstract void OnInternalStatusChanged(int i);
 
         public StreamingAudioClient(StreamingAudioService service) throws RemoteException

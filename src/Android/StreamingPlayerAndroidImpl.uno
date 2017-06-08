@@ -30,6 +30,7 @@ namespace StreamingPlayer
         static Java.Object _binder; // StreamingAudioService.LocalBinder
         static Java.Object _client;
         static PlayerStatus _status = PlayerStatus.Stopped;
+        static int _currentTrackIndex = -1;
 
         static public bool IsConnected
         {
@@ -161,9 +162,9 @@ namespace StreamingPlayer
                     {
                         client = new StreamingAudioService.StreamingAudioClient(ourService)
                         {
-                            @Override public void OnCurrentTrackChanged()
+                            @Override public void OnCurrentTrackChanged(int index)
                             {
-                                @{StreamingPlayer.OnCurrentTrackChanged():Call()};
+                                @{StreamingPlayer.OnCurrentTrackChanged(int):Call(index)};
                             }
                             @Override public void OnInternalStatusChanged(int i)
                             {
@@ -196,7 +197,7 @@ namespace StreamingPlayer
         //------------------------------------------------------------
         // Events
 
-        static public event Action CurrentTrackChanged;
+        static public event Action<int> CurrentTrackChanged;
         static public event Action<bool> HasNextChanged;
         static public event Action<bool> HasPreviousChanged;
         static public event StatusChangedHandler StatusChanged;
@@ -216,11 +217,12 @@ namespace StreamingPlayer
                 HasPreviousChanged(HasPrevious);
         }
 
-        static void OnCurrentTrackChanged()
+        static void OnCurrentTrackChanged(int index)
         {
             debug_log("Current track changed");
+            _currentTrackIndex = index;
             if (CurrentTrackChanged != null)
-                CurrentTrackChanged();
+                CurrentTrackChanged(index);
         }
 
         static void InternalStatusChanged(int i)

@@ -15,6 +15,9 @@ namespace StreamingPlayer
         static PlaylistModule _instance;
         static bool _playerInitialized;
 
+        static int _currentTrackIndex = -1;
+        static int GetCurrentTrackIndex() { return _currentTrackIndex; }
+
         public PlaylistModule(): base(true, "statusChanged", "currentTrackChanged")
         {
             if (_instance != null) return;
@@ -44,7 +47,7 @@ namespace StreamingPlayer
             AddMember(new NativeProperty<PlayerStatus,string>("status", GetStatus, null, PlayerStatusConverter.Convert));
             AddMember(new NativeProperty<double,double>("duration", GetDuration));
             AddMember(new NativeProperty<double,double>("progress", GetProgress));
-            AddMember(new NativeProperty<Track,Fuse.Scripting.Object>("currentTrack", GetCurrentTrack, null, Track.ToJSObject));
+            AddMember(new NativeProperty<int,int>("currentTrack", GetCurrentTrackIndex));
 
             var statusChanged = new NativeEvent("statusChanged");
             On("statusChanged", statusChanged);
@@ -56,15 +59,6 @@ namespace StreamingPlayer
 
             StreamingPlayer.StatusChanged += OnStatusChanged;
             StreamingPlayer.CurrentTrackChanged += OnCurrentTrackChanged;
-
-            Fuse.Platform.Lifecycle.EnteringForeground += OnEnteringForeground;
-        }
-
-        void OnEnteringForeground(ApplicationState state)
-        {
-            debug_log("Entering foreground: state: " + StreamingPlayer.Status);
-            OnStatusChanged(StreamingPlayer.Status);
-            OnCurrentTrackChanged();
         }
 
         bool CanCallBackToJS
@@ -81,8 +75,9 @@ namespace StreamingPlayer
             Emit("statusChanged", status.Stringify());
         }
 
-        void OnCurrentTrackChanged()
+        void OnCurrentTrackChanged(int index)
         {
+            _currentTrackIndex = index;
             Emit("statusChanged");
         }
 
@@ -118,12 +113,6 @@ namespace StreamingPlayer
             else
                 StreamingPlayer.SetPlaylist(null);
             return null;
-        }
-
-        Track GetCurrentTrack()
-        {
-            if (!_playerInitialized) return null;
-            return StreamingPlayer.CurrentTrack;
         }
 
         bool GetHasNext()
