@@ -11,7 +11,6 @@ namespace StreamingPlayer
     [UXGlobalModule]
     public class PlaylistModule : NativeModule
     {
-        static IStreamingPlayer _player;
 
         static PlaylistModule _instance;
 

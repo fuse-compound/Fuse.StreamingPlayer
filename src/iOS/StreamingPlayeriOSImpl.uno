@@ -377,20 +377,29 @@ namespace StreamingPlayer
 
         public void SetPlaylist(Track[] tracks)
         {
+            debug_log "iOS: setting playlist";
             _tracks.Clear();
             if (tracks == null)
+            {
+                debug_log("tracks was null. returning");
                 return;
+            }
+            debug_log("tracks wasnt null. adding. CurrentTrack = >" + CurrentTrack + "<");
             foreach (var t in tracks)
+            {
                 _tracks.Add(t);
-            OnHasNextOrHasPreviousChanged();
+            }
+            if (CurrentTrack==null)
+                CurrentTrack = _tracks[0];
+            else
+                OnHasNextOrHasPreviousChanged();
         }
 
         public int Next()
         {
-            debug_log("UNO: trying next ");
+            debug_log("UNO: trying next (hasnext=" + HasNext + ")");
             if (HasNext)
             {
-                debug_log("UNO: did do next");
                 var newTrack = _tracks[_tracks.IndexOf(CurrentTrack) + 1];
                 Play(newTrack);
                 CurrentTrack = newTrack;
@@ -401,6 +410,7 @@ namespace StreamingPlayer
 
         public int Previous()
         {
+            debug_log("UNO: trying previous (hasprevious=" + HasPrevious + ")");
             if (HasPrevious)
             {
                 var newTrack = _tracks[_tracks.IndexOf(CurrentTrack) - 1];

@@ -1,0 +1,17 @@
+<Page ux:Class="ArtistPage">
+    <Router ux:Dependency="router" />
+    <JavaScript File="Artist.js"/>
+    <DockPanel>
+        <StatusBarBackground Dock="Top"/>
+        <ScrollView>
+            <StackPanel>
+                <Button Text="Refresh" Clicked="{refreshClicked}" />
+                <Each Items="{artists}">
+                    <DockPanel Padding="10" Margin="0,1" Background="#fff">
+                        <Text Value="{name}" Clicked="{trackClicked}" />
+                    </DockPanel>
+                </Each>
+            </StackPanel>
+        </ScrollView>
+    </DockPanel>
+</Page>

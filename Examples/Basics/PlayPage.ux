@@ -1,0 +1,22 @@
+<Page ux:Class="PlayPage">
+    <JavaScript File="play.js"/>
+    <Router ux:Dependency="router" />
+    <DockPanel>
+        <StatusBarBackground Dock="Top"/>
+        <ScrollView>
+            <StackPanel>
+                <Each Items="{tracks}">
+                    <DockPanel Padding="10" Margin="0,1" Background="#fff">
+                        <Text Value="{name}" />
+                    </DockPanel>
+                </Each>
+            </StackPanel>
+        </ScrollView>
+        <StackPanel Orientation="Horizontal" Dock="Bottom" ItemSpacing="40" ContentAlignment="Center"
+                    Padding="20">
+            <TextButton Value="Prev" Clicked="{prevClicked}" />
+            <TextButton Value="Stop" Clicked="{backClicked}" />
+            <TextButton Value="Next" Clicked="{nextClicked}" />
+        </StackPanel>
+    </DockPanel>
+</Page>

@@ -1,15 +1,9 @@
-<App Background="#2586EC">
-	<DockPanel>
-		<JavaScript File="MainView.js"/>
-		<StackPanel Dock="Top" Background="#2586EC">
-			<StatusBarBackground/>
-			<Fuse.iOS.StatusBarConfig Style="Light"/>
-		</StackPanel>
-		<StackPanel Width="92%" Height="460" Padding="20">
-			<Rectangle Layer="Background" CornerRadius="10" Color="#fff"/>
-			<Text Value="DooDad" Alignment="Center" FontSize="35" TextColor="#2586EC"/>
-			<Basic.Button Text="Foo" Clicked="{foo}" />
-		</StackPanel>
-		<BottomBarBackground Dock="Bottom" />
-	</DockPanel>
+<App>
+    <iOS.StatusBarConfig Style="Light" />
+    <Android.StatusBarConfig Color="#7f5ce6" />
+    <Router ux:Name="router" />
+    <Navigator DefaultPath="artists">
+        <ArtistPage ux:Template="artists" router="router" />
+        <PlayPage ux:Template="play" router="router" />
+    </Navigator>
 </App>
