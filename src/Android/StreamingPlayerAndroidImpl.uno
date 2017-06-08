@@ -20,7 +20,7 @@ namespace StreamingPlayer
                     "android.os.IBinder",
                     "android.os.RemoteException",
                     "android.view.KeyEvent")]
-    extern(Android) class StreamingPlayerAndroidImpl : IStreamingPlayer
+    extern(Android) class StreamingPlayer
     {
         //------------------------------------------------------------
         // State
@@ -93,11 +93,11 @@ namespace StreamingPlayer
         //------------------------------------------------------------
         // Initializing
 
-        static StreamingPlayerAndroidImpl _current;
+        static StreamingPlayer _current;
         static bool _permittedToPlay = false;
-        public StreamingPlayerAndroidImpl()
+        public StreamingPlayer()
         {
-            debug_log("Created streamingplayerandroidimpl");
+            debug_log("Created StreamingPlayer");
 
             InternalStatusChanged(0);
 
@@ -169,19 +169,19 @@ namespace StreamingPlayer
                         {
                             // @Override public void OnStatusChanged()
                             // {
-                            //     @{StreamingPlayerAndroidImpl:Of(_this).OnStatusChanged():Call()};
+                            //     @{StreamingPlayer:Of(_this).OnStatusChanged():Call()};
                             // }
                             @Override public void OnHasPrevNextChanged()
                             {
-                                @{StreamingPlayerAndroidImpl:Of(_this).HasPrevNextChanged():Call()};
+                                @{StreamingPlayer:Of(_this).HasPrevNextChanged():Call()};
                             }
                             @Override public void OnCurrentTrackChanged()
                             {
-                                @{StreamingPlayerAndroidImpl:Of(_this).OnCurrentTrackChanged():Call()};
+                                @{StreamingPlayer:Of(_this).OnCurrentTrackChanged():Call()};
                             }
                             @Override public void OnInternalStatusChanged(int i)
                             {
-                                @{StreamingPlayerAndroidImpl:Of(_this).InternalStatusChanged(int):Call(i)};
+                                @{StreamingPlayer:Of(_this).InternalStatusChanged(int):Call(i)};
                             }
                         };
                     }
@@ -193,10 +193,10 @@ namespace StreamingPlayer
                     // This is so the service can fire the callbacks
                     ourService.setAudioClient(client);
 
-                    @{StreamingPlayerAndroidImpl:Of(_this)._service:Set(ourService)};
-                    @{StreamingPlayerAndroidImpl:Of(_this)._binder:Set(binder)};
-                    @{StreamingPlayerAndroidImpl:Of(_this)._client:Set(client)};
-                    @{StreamingPlayerAndroidImpl:Of(_this).ConnectedToBackgroundService():Call()};
+                    @{StreamingPlayer:Of(_this)._service:Set(ourService)};
+                    @{StreamingPlayer:Of(_this)._binder:Set(binder)};
+                    @{StreamingPlayer:Of(_this)._client:Set(client)};
+                    @{StreamingPlayer:Of(_this).ConnectedToBackgroundService():Call()};
                 }
                 // Called when the connection with the service disconnects unexpectedly
                 public void onServiceDisconnected(ComponentName className)

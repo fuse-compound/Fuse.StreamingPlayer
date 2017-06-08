@@ -18,7 +18,7 @@ namespace StreamingPlayer
     [Require("Xcode.Framework", "MediaPlayer")]
     [Require("Xcode.Framework", "CoreImage")]
     [ForeignInclude(Language.ObjC, "CoreImage/CoreImage.h")]
-    extern(iOS) class StreamingPlayeriOSImpl : IStreamingPlayer
+    extern(iOS) class StreamingPlayer
     {
 
         static readonly string _statusName = "status";
@@ -39,7 +39,7 @@ namespace StreamingPlayer
 
         iOSPlayerState _internalState = iOSPlayerState.Unknown;
 
-        static StreamingPlayeriOSImpl _current;
+        static StreamingPlayer _current;
 
         void OnIsLikelyToKeepUpChanged()
         {
@@ -312,7 +312,7 @@ namespace StreamingPlayer
         @}
 
         static bool DidAddAVPlayerItemDidPlayToEndTimeNotification = false;
-        public StreamingPlayeriOSImpl()
+        public StreamingPlayer()
         {
             new LockScreenMediaControlsiOSImpl(this);
             if (!DidAddAVPlayerItemDidPlayToEndTimeNotification)

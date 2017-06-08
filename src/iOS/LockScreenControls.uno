@@ -17,9 +17,9 @@ namespace StreamingPlayer
     extern(iOS) class LockScreenMediaControlsiOSImpl
     {
 
-        IStreamingPlayer _player;
+        StreamingPlayer _player;
 
-        public LockScreenMediaControlsiOSImpl(IStreamingPlayer iosPlayer)
+        public LockScreenMediaControlsiOSImpl(StreamingPlayer iosPlayer)
         {
             debug_log("Registering handlers");
             RegisterHandlers(Next,Previous,Play,Pause,Seek);

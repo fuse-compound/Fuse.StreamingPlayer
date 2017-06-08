@@ -8,7 +8,7 @@ using Uno.Compiler.ExportTargetInterop;
 
 namespace StreamingPlayer
 {
-    extern(!Android && !iOS) class StreamingPlayerDummyImpl : IStreamingPlayer
+    extern(!Android && !iOS) class StreamingPlayer
     {
         double _duration = 200.0;
         public double Duration { get { return _duration; } private set { _duration = value; } }

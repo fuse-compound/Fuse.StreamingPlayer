@@ -40,31 +40,4 @@ namespace StreamingPlayer
     }
 
     public delegate void StatusChangedHandler(PlayerStatus status);
-
-    public interface IStreamingPlayer
-    {
-        void Play(Track track);
-        void Seek(double toProgress);
-        void Pause();
-        void Resume();
-        void Stop();
-        double Duration { get; }
-        double Progress { get; }
-
-        PlayerStatus Status { get; }
-        event StatusChangedHandler StatusChanged;
-
-        int Next();
-        int Previous();
-        void AddTrack(Track track);
-        void SetPlaylist(Track[] tracks);
-
-        Track CurrentTrack { get; }
-        bool HasNext { get; }
-        bool HasPrevious { get; }
-
-        event Action CurrentTrackChanged;
-        event Action<bool> HasNextChanged;
-        event Action<bool> HasPreviousChanged;
-    }
 }

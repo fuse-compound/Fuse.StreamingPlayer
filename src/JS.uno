@@ -19,14 +19,19 @@ namespace StreamingPlayer
         NativeEvent _hasNextChanged;
         NativeEvent _hasPreviousChanged;
 
+        StreamingPlayer _player;
+
         public PlaylistModule()
         {
             if (_instance != null) return;
             _instance = this;
 
             if (_player == null) {
-                _player = StreamingPlayer.New();
+                _player = new StreamingPlayer();
             }
+
+            if (!Marshal.CanConvertClass(typeof(Track)))
+                Marshal.AddConverter(new TrackConverter());
 
             Resource.SetGlobalKey(_instance, "FuseJS/StreamingPlayer");
             AddMember(new NativeFunction("next", (NativeCallback)Next));
