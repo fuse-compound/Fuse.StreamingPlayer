@@ -393,10 +393,11 @@ namespace StreamingPlayer
             debug_log("UNO: trying next (hasnext=" + HasNext + ")");
             if (HasNext)
             {
-                var newTrack = _tracks[_tracks.IndexOf(CurrentTrack) + 1];
+                var newIndex = _tracks.IndexOf(CurrentTrack) + 1;
+                var newTrack = _tracks[newIndex];
                 Play(newTrack);
                 CurrentTrack = newTrack;
-                return newTrack.Id;
+                return newIndex;
             }
             return -1;
         }
@@ -406,10 +407,11 @@ namespace StreamingPlayer
             debug_log("UNO: trying previous (hasprevious=" + HasPrevious + ")");
             if (HasPrevious)
             {
-                var newTrack = _tracks[_tracks.IndexOf(CurrentTrack) - 1];
+                var newIndex = _tracks.IndexOf(CurrentTrack) - 1;
+                var newTrack = _tracks[newIndex];
                 Play(newTrack);
                 CurrentTrack = newTrack;
-                return newTrack.Id;
+                return newIndex;
             }
             return -1;
         }

@@ -64,13 +64,12 @@ namespace StreamingPlayer
                     var currentTrackJava = GetCurrentTrackImpl(_client);
                     if (currentTrackJava != null)
                     {
-                        var id = TrackAndroidImpl.GetId(currentTrackJava);
                         var name = TrackAndroidImpl.GetName(currentTrackJava);
                         var artist = TrackAndroidImpl.GetArtist(currentTrackJava);
                         var url = TrackAndroidImpl.GetUrl(currentTrackJava);
                         var artworkUrl = TrackAndroidImpl.GetArtworkUrl(currentTrackJava);
                         var duration = TrackAndroidImpl.GetDuration(currentTrackJava);
-                        var ret = new Track(id, name, artist, url, artworkUrl, duration);
+                        var ret = new Track(name, artist, url, artworkUrl, duration);
                         return ret;
                     }
                 }
@@ -259,9 +258,9 @@ namespace StreamingPlayer
         }
 
         [Foreign(Language.Java)]
-        static Java.Object ToJavaTrack(int id, string name, string artist, string url, string artworkUrl, double duration)
+        static Java.Object ToJavaTrack(string name, string artist, string url, string artworkUrl, double duration)
         @{
-            return new Track(id, name, artist, url, artworkUrl, duration);
+            return new Track(name, artist, url, artworkUrl, duration);
         @}
 
         static bool _pendingPlay = false;
@@ -273,7 +272,7 @@ namespace StreamingPlayer
 
             if (IsConnected)
             {
-                var javaTrack = ToJavaTrack(track.Id, track.Name, track.Artist, track.Url, track.ArtworkUrl, track.Duration);
+                var javaTrack = ToJavaTrack(track.Name, track.Artist, track.Url, track.ArtworkUrl, track.Duration);
                 Status = PlayerStatus.Loading;
                 PlayImpl(_client, javaTrack);
                 _pendingPlay = false;
@@ -392,7 +391,6 @@ namespace StreamingPlayer
 
             if (IsConnected)
             {
-                int[] ids = new int[tracks.Length];
                 string[] names = new string[tracks.Length];
                 string[] artists = new string[tracks.Length];
                 string[] urls = new string[tracks.Length];
@@ -401,7 +399,6 @@ namespace StreamingPlayer
 
                 for (int i = 0; i < tracks.Length; i++) {
                     var t = tracks[i];
-                    ids[i] = t.Id;
                     names[i] = t.Name;
                     artists[i] = t.Artist;
                     urls[i] = t.Url;
@@ -409,7 +406,7 @@ namespace StreamingPlayer
                     durations[i] = t.Duration;
                 }
                 debug_log("Android: set current playlist");
-                SetPlaylistImpl(_client, ids, names, artists, urls, artworkUrls, durations);
+                SetPlaylistImpl(_client, names, artists, urls, artworkUrls, durations);
             } else {
                 debug_log("Android: caching as _tempPlaylist");
                 _tempPlaylist = tracks;
@@ -418,24 +415,22 @@ namespace StreamingPlayer
 
         [Foreign(Language.Java)]
         static void SetPlaylistImpl(Java.Object client,
-                             int[] ids,
                              string[] names,
                              string[] artists,
                              string[] urls,
                              string[] artworkUrls,
                              double[] durations)
         @{
-            int[] i = ids.copyArray();
             String[] n = names.copyArray();
             String[] art = artists.copyArray();
             String[] u = urls.copyArray();
             String[] a = artworkUrls.copyArray();
             double[] d = durations.copyArray();
 
-            Track[] tracks = new Track[i.length];
+            Track[] tracks = new Track[n.length];
 
-            for (int j = 0; j < i.length; j++) {
-                Track t = new Track(i[j], n[j], art[j], u[j], a[j], d[j]);
+            for (int j = 0; j < n.length; j++) {
+                Track t = new Track(n[j], art[j], u[j], a[j], d[j]);
                 tracks[j] = t;
             }
 

@@ -10,16 +10,14 @@ namespace StreamingPlayer
 
     public class Track
     {
-        public readonly int Id;
         public readonly string Name;
         public readonly string Artist;
         public readonly string Url;
         public readonly string ArtworkUrl;
         public readonly double Duration;
 
-        public Track(int id, string name, string artist, string url, string artworkUrl, double duration)
+        public Track(string name, string artist, string url, string artworkUrl, double duration)
         {
-            Id = id;
             Name = name;
             Artist = artist;
             Url = url;
@@ -32,8 +30,7 @@ namespace StreamingPlayer
             var t = obj as Track;
             if (t != null)
             {
-                if (t.Id == Id
-                    && t.Name == Name
+                if (t.Name == Name
                     && t.Artist == Artist
                     && t.Url == Url)
                     return true;
@@ -43,7 +40,7 @@ namespace StreamingPlayer
 
         public override string ToString()
         {
-            return "Track:" + Id +
+            return "Track:" +
                 ": Name: " + Name +
                 ", Artist: " + Artist +
                 ", Url: " + Url +
@@ -56,7 +53,6 @@ namespace StreamingPlayer
             if (t == null)
                 return null;
             var obj = c.NewObject();
-            obj["id"] = t.Id;
             obj["name"] = t.Name;
             obj["artist"] = t.Artist;
             obj["url"] = t.Url;
@@ -72,14 +68,6 @@ namespace StreamingPlayer
                     "com.fuse.StreamingPlayer.Track")]
     extern(Android) static class TrackAndroidImpl
     {
-
-        [Foreign(Language.Java)]
-        public static int GetId(Java.Object t)
-        @{
-            Track track = (Track)t;
-            return track.Id;
-        @}
-
         [Foreign(Language.Java)]
         public static string GetName(Java.Object t)
         @{
@@ -128,13 +116,12 @@ namespace StreamingPlayer
             if (CanConvert(t))
             {
                 var jsObject = (Fuse.Scripting.Object)o;
-                var id = Marshal.ToInt(jsObject["id"]);
                 var name = jsObject["name"].ToString();
                 var artist = jsObject["artist"].ToString();
                 var url = jsObject["url"].ToString();
                 var artworkUrl = jsObject["artworkUrl"].ToString();
                 var duration = Marshal.ToDouble(jsObject["duration"]);
-                return new Track(id, name, artist, url, artworkUrl, duration);
+                return new Track(name, artist, url, artworkUrl, duration);
             }
             return null;
         }
