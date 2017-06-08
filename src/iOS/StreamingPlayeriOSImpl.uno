@@ -18,30 +18,28 @@ namespace StreamingPlayer
     [Require("Xcode.Framework", "MediaPlayer")]
     [Require("Xcode.Framework", "CoreImage")]
     [ForeignInclude(Language.ObjC, "CoreImage/CoreImage.h")]
-    extern(iOS) class StreamingPlayer
+    extern(iOS) static class StreamingPlayer
     {
 
         static readonly string _statusName = "status";
         static readonly string _isPlaybackLikelyToKeepUp = "playbackLikelyToKeepUp";
 
         static ObjC.Object _player;
-        ObjC.Object CurrentPlayerItem
+        static ObjC.Object CurrentPlayerItem
         {
             get { return GetCurrentPlayerItem(_player); }
         }
 
-        List<Track> _tracks = new List<Track>();
+        static List<Track> _tracks = new List<Track>();
 
-        public event StatusChangedHandler StatusChanged;
-        public event Action CurrentTrackChanged;
-        public event Action<bool> HasNextChanged;
-        public event Action<bool> HasPreviousChanged;
+        static public event StatusChangedHandler StatusChanged;
+        static public event Action CurrentTrackChanged;
+        static public event Action<bool> HasNextChanged;
+        static public event Action<bool> HasPreviousChanged;
 
-        iOSPlayerState _internalState = iOSPlayerState.Unknown;
+        static iOSPlayerState _internalState = iOSPlayerState.Unknown;
 
-        static StreamingPlayer _current;
-
-        void OnIsLikelyToKeepUpChanged()
+        static void OnIsLikelyToKeepUpChanged()
         {
             debug_log("OnIsLikelyToKeepUpChanged");
             if (Status == PlayerStatus.Paused)
@@ -58,13 +56,13 @@ namespace StreamingPlayer
         }
 
         [Foreign(Language.ObjC)]
-        float GetRate(ObjC.Object player)
+        static float GetRate(ObjC.Object player)
         @{
             AVPlayer* p = (AVPlayer*)player;
             return [p rate];
         @}
 
-        public void Play(Track track)
+        static public void Play(Track track)
         {
             debug_log("Play UNO called");
             Status = PlayerStatus.Loading;
@@ -93,14 +91,14 @@ namespace StreamingPlayer
             }
         }
 
-        void PlayerItemDidReachEnd()
+        static void PlayerItemDidReachEnd()
         {
             debug_log("We did reach the end of our track");
             Next();
         }
 
         [Foreign(Language.ObjC)]
-        void ObserveAVPlayerItemDidPlayToEndTimeNotification(Action callback, ObjC.Object playerItem)
+        static void ObserveAVPlayerItemDidPlayToEndTimeNotification(Action callback, ObjC.Object playerItem)
         @{
             // this is NSNotificationName on iOS 10 :| maybe move this into a TargetSpecific type?
             NSString* notifName = AVPlayerItemDidPlayToEndTimeNotification;
@@ -116,7 +114,7 @@ namespace StreamingPlayer
             ];
         @}
 
-        public void Resume()
+        static public void Resume()
         {
             debug_log("Resume UNO called");
             if (_player != null)
@@ -126,7 +124,7 @@ namespace StreamingPlayer
             }
         }
 
-        public void Pause()
+        static public void Pause()
         {
             if (_player != null)
             {
@@ -135,7 +133,7 @@ namespace StreamingPlayer
             }
         }
 
-        public void Stop()
+        static public void Stop()
         {
             if (_player != null)
             {
@@ -149,7 +147,7 @@ namespace StreamingPlayer
             }
         }
 
-        public void Seek(double toProgress)
+        static public void Seek(double toProgress)
         {
             if (Status == PlayerStatus.Loading)
                 return;
@@ -158,18 +156,18 @@ namespace StreamingPlayer
             NowPlayingInfoCenter.SetProgress(toProgress * Duration);
         }
 
-        public double Duration
+        static public double Duration
         {
             get { return (_player != null) ? GetDuration(_player) : 0.0; }
         }
 
-        public double Progress
+        static public double Progress
         {
             get { return (_player != null) ? GetPosition(_player) : 0.0; }
         }
 
-        PlayerStatus _status = PlayerStatus.Stopped;
-        public PlayerStatus Status
+        static PlayerStatus _status = PlayerStatus.Stopped;
+        static public PlayerStatus Status
         {
             get
             {
@@ -194,7 +192,7 @@ namespace StreamingPlayer
             }
         }
 
-        string InternalStateToString(int s)
+        static string InternalStateToString(int s)
         {
             switch (s)
             {
@@ -204,7 +202,7 @@ namespace StreamingPlayer
             }
         }
 
-        void OnInternalStateChanged()
+        static void OnInternalStateChanged()
         {
             var newState = GetStatus(_player);
             var lastState = _internalState;
@@ -218,7 +216,7 @@ namespace StreamingPlayer
                 PlayImpl(_player);
         }
 
-        void OnStatusChanged()
+        static void OnStatusChanged()
         {
             if (_internalState == iOSPlayerState.Initialized && Status == PlayerStatus.Stopped)
                 PlayImpl(_player);
@@ -227,27 +225,27 @@ namespace StreamingPlayer
                 StatusChanged(Status);
         }
 
-        bool IsLikelyToKeepUp
+        static bool IsLikelyToKeepUp
         {
             get { return GetIsLikelyToKeepUp(_player); }
         }
 
         [Foreign(Language.ObjC)]
-        bool GetIsLikelyToKeepUp(ObjC.Object player)
+        static bool GetIsLikelyToKeepUp(ObjC.Object player)
         @{
             AVPlayer* p = (AVPlayer*)player;
             return [[p currentItem] isPlaybackLikelyToKeepUp];
         @}
 
         [Foreign(Language.ObjC)]
-        int GetStatus(ObjC.Object player)
+        static int GetStatus(ObjC.Object player)
         @{
             AVPlayer* p = (AVPlayer*)player;
             return [[p currentItem] status];
         @}
 
         [Foreign(Language.ObjC)]
-        void StopAndRelease(ObjC.Object player)
+        static void StopAndRelease(ObjC.Object player)
         @{
             AVPlayer* p = (AVPlayer*)player;
             [p pause];
@@ -260,7 +258,7 @@ namespace StreamingPlayer
         @}
 
         [Foreign(Language.ObjC)]
-        void AssignNewPlayerItemWithUrl(ObjC.Object player, string url)
+        static void AssignNewPlayerItemWithUrl(ObjC.Object player, string url)
         @{
             AVPlayer* p = (AVPlayer*)player;
             p.rate = 0.0f;
@@ -269,28 +267,28 @@ namespace StreamingPlayer
         @}
 
         [Foreign(Language.ObjC)]
-        void PlayImpl(ObjC.Object player)
+        static void PlayImpl(ObjC.Object player)
         @{
             AVPlayer* p = (AVPlayer*)player;
             [p play];
         @}
 
         [Foreign(Language.ObjC)]
-        void PauseImpl(ObjC.Object player)
+        static void PauseImpl(ObjC.Object player)
         @{
             AVPlayer* p = (AVPlayer*)player;
             [p pause];
         @}
 
         [Foreign(Language.ObjC)]
-        double GetDuration(ObjC.Object player)
+        static double GetDuration(ObjC.Object player)
         @{
             AVPlayer* p = (AVPlayer*)player;
             return CMTimeGetSeconds([[[p currentItem] asset] duration]);
         @}
 
         [Foreign(Language.ObjC)]
-        double GetPosition(ObjC.Object player)
+        static double GetPosition(ObjC.Object player)
         @{
             AVPlayer* p = (AVPlayer*)player;
             return CMTimeGetSeconds([[p currentItem] currentTime]);
@@ -298,33 +296,34 @@ namespace StreamingPlayer
 
 
         [Foreign(Language.ObjC)]
-        void SetPosition(ObjC.Object player, double position)
+        static void SetPosition(ObjC.Object player, double position)
         @{
             AVPlayer* p = (AVPlayer*)player;
             [p seekToTime: CMTimeMake(position * 1000, 1000)];
         @}
 
         [Foreign(Language.ObjC)]
-        ObjC.Object GetCurrentPlayerItem(ObjC.Object player)
+        static ObjC.Object GetCurrentPlayerItem(ObjC.Object player)
         @{
             AVPlayer* p = (AVPlayer*)player;
             return p.currentItem;
         @}
 
         static bool DidAddAVPlayerItemDidPlayToEndTimeNotification = false;
-        public StreamingPlayer()
+        static public bool Init()
         {
-            new LockScreenMediaControlsiOSImpl(this);
+            LockScreenMediaControlsiOSImpl.Init();
             if (!DidAddAVPlayerItemDidPlayToEndTimeNotification)
             {
                 debug_log("REGISTERING OBS");
                 ObserveAVPlayerItemDidPlayToEndTimeNotification(PlayerItemDidReachEnd, CurrentPlayerItem);
                 DidAddAVPlayerItemDidPlayToEndTimeNotification = true;
             }
+            return true;
         }
 
-        Track _currentTrack;
-        public Track CurrentTrack
+        static Track _currentTrack;
+        static public Track CurrentTrack
         {
             get
             {
@@ -337,7 +336,7 @@ namespace StreamingPlayer
             }
         }
 
-        public bool HasNext
+        static public bool HasNext
         {
             get
             {
@@ -350,7 +349,7 @@ namespace StreamingPlayer
             }
         }
 
-        public bool HasPrevious
+        static public bool HasPrevious
         {
             get
             {
@@ -361,7 +360,7 @@ namespace StreamingPlayer
             }
         }
 
-        void OnCurrentTrackChanged()
+        static void OnCurrentTrackChanged()
         {
             if (CurrentTrackChanged != null) {
                 CurrentTrackChanged();
@@ -369,13 +368,13 @@ namespace StreamingPlayer
             OnHasNextOrHasPreviousChanged();
         }
 
-        public void AddTrack(Track track)
+        static public void AddTrack(Track track)
         {
             _tracks.Add(track);
             OnHasNextOrHasPreviousChanged();
         }
 
-        public void SetPlaylist(Track[] tracks)
+        static public void SetPlaylist(Track[] tracks)
         {
             debug_log "iOS: setting playlist";
             _tracks.Clear();
@@ -395,7 +394,7 @@ namespace StreamingPlayer
                 OnHasNextOrHasPreviousChanged();
         }
 
-        public int Next()
+        static public int Next()
         {
             debug_log("UNO: trying next (hasnext=" + HasNext + ")");
             if (HasNext)
@@ -408,7 +407,7 @@ namespace StreamingPlayer
             return -1;
         }
 
-        public int Previous()
+        static public int Previous()
         {
             debug_log("UNO: trying previous (hasprevious=" + HasPrevious + ")");
             if (HasPrevious)
@@ -421,7 +420,7 @@ namespace StreamingPlayer
             return -1;
         }
 
-        void OnHasNextOrHasPreviousChanged()
+        static void OnHasNextOrHasPreviousChanged()
         {
             if (HasNextChanged != null)
                 HasNextChanged(HasNext);

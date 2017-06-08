@@ -19,15 +19,15 @@ namespace StreamingPlayer
         NativeEvent _hasNextChanged;
         NativeEvent _hasPreviousChanged;
 
-        StreamingPlayer _player;
+        static bool _playerInitialized;
 
         public PlaylistModule()
         {
             if (_instance != null) return;
             _instance = this;
 
-            if (_player == null) {
-                _player = new StreamingPlayer();
+            if (!_playerInitialized) {
+                _playerInitialized = StreamingPlayer.Init();
             }
 
             if (!Marshal.CanConvertClass(typeof(Track)))
@@ -65,20 +65,20 @@ namespace StreamingPlayer
             _hasPreviousChanged = new NativeEvent("hasPreviousChanged");
             AddMember(_hasPreviousChanged);
 
-            _player.StatusChanged += OnStatusChanged;
-            _player.CurrentTrackChanged += OnCurrentTrackChanged;
-            _player.HasNextChanged += OnHasNextChanged;
-            _player.HasPreviousChanged += OnHasPreviousChanged;
+            StreamingPlayer.StatusChanged += OnStatusChanged;
+            StreamingPlayer.CurrentTrackChanged += OnCurrentTrackChanged;
+            StreamingPlayer.HasNextChanged += OnHasNextChanged;
+            StreamingPlayer.HasPreviousChanged += OnHasPreviousChanged;
 
             Fuse.Platform.Lifecycle.EnteringForeground += OnEnteringForeground;
         }
 
         void OnEnteringForeground(ApplicationState state)
         {
-            debug_log("Entering foreground: state: " + _player.Status);
-            OnStatusChanged(_player.Status);
-            OnHasNextChanged(_player.HasNext);
-            OnHasPreviousChanged(_player.HasPrevious);
+            debug_log("Entering foreground: state: " + StreamingPlayer.Status);
+            OnStatusChanged(StreamingPlayer.Status);
+            OnHasNextChanged(StreamingPlayer.HasNext);
+            OnHasPreviousChanged(StreamingPlayer.HasPrevious);
             OnCurrentTrackChanged();
         }
 
@@ -118,29 +118,32 @@ namespace StreamingPlayer
 
         public object Next(Context c, object[] args)
         {
+            if (!_playerInitialized) return null;
             debug_log("Next was called from JS");
-            return _player.Next();
+            return StreamingPlayer.Next();
         }
 
         public object Previous(Context c, object[] args)
         {
-            return _player.Previous();
+            if (!_playerInitialized) return null;
+            return StreamingPlayer.Previous();
         }
 
         public object AddTrack(Context c, object[] args)
         {
+            if (!_playerInitialized) return null;
             foreach (var a in args)
             {
                 var track = Marshal.ToType<Track>(a);
                 if (a != null)
-                    _player.AddTrack(track);
+                    StreamingPlayer.AddTrack(track);
             }
             return null;
         }
 
         public object SetPlaylist(Context c, object[] args)
         {
-            //SetPlaylist(Track[] tracks)
+            if (!_playerInitialized) return null;
             var trackArray = args[0] as IArray;
             if (trackArray != null)
             {
@@ -150,59 +153,85 @@ namespace StreamingPlayer
                     var a = trackArray[i];
                     var track = Marshal.ToType<Track>(a);
                     if (a != null)
-                        _player.AddTrack(track);
+                        StreamingPlayer.AddTrack(track);
                 }
-                _player.SetPlaylist(tracks.ToArray());
+                StreamingPlayer.SetPlaylist(tracks.ToArray());
             }
             else
-                _player.SetPlaylist(null);
+                StreamingPlayer.SetPlaylist(null);
             return null;
         }
 
-        Track GetCurrentTrack() { return _player.CurrentTrack; }
+        Track GetCurrentTrack()
+        {
+            if (!_playerInitialized) return null;
+            return StreamingPlayer.CurrentTrack;
+        }
 
-        bool GetHasNext() { return _player.HasNext; }
+        bool GetHasNext()
+        {
+            if (!_playerInitialized) return false;
+            return StreamingPlayer.HasNext;
+        }
 
-        bool GetHasPrevious() { return _player.HasPrevious; }
+        bool GetHasPrevious()
+        {
+            if (!_playerInitialized) return false;
+            return StreamingPlayer.HasPrevious;
+        }
 
-        PlayerStatus GetStatus() { return _player.Status; }
+        PlayerStatus GetStatus()
+        {
+            if (!_playerInitialized) return PlayerStatus.Stopped;
+            return StreamingPlayer.Status;
+        }
 
-        double GetDuration() { return _player.Duration; }
+        double GetDuration()
+        {
+            if (!_playerInitialized) return 0;
+            return StreamingPlayer.Duration;
+        }
 
-        double GetProgress() { return _player.Progress; }
+        double GetProgress()
+        {
+            if (!_playerInitialized) return 0;
+            return StreamingPlayer.Progress;
+        }
 
         object Play(Context c, object[] args)
         {
             var track = args.ValueOrDefault<Track>(0, null);
             if (track == null)
                 throw new Exception("Play needs a {name,url,streamUrl} argument");
-            _player.Play(track);
+            StreamingPlayer.Play(track);
             return null;
         }
 
         object Resume(Context c, object[] args)
         {
-            if (_player == null)
-                throw new Exception("Player was null!, nothing to resume.");
-            _player.Resume();
+            if (!_playerInitialized) return null;
+            StreamingPlayer.Resume();
             return null;
         }
 
         object Seek(Context c, object[] args)
         {
-            _player.Seek(args.ValueOrDefault<double>(0, 0.0));
+            if (!_playerInitialized) return null;
+            StreamingPlayer.Seek(args.ValueOrDefault<double>(0, 0.0));
             return null;
         }
 
         object[] Pause(Context c, object[] args)
         {
-            _player.Pause();
+            if (!_playerInitialized) return null;
+            StreamingPlayer.Pause();
             return null;
         }
 
         object[] Stop(Context c, object[] args)
         {
-            _player.Stop();
+            if (!_playerInitialized) return null;
+            StreamingPlayer.Stop();
             return null;
         }
     }

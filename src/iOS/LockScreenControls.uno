@@ -7,29 +7,27 @@ using Uno.Compiler.ExportTargetInterop;
 
 namespace StreamingPlayer
 {
-
-
     [ForeignInclude(Language.ObjC, "AVFoundation/AVFoundation.h")]
     [ForeignInclude(Language.ObjC, "MediaPlayer/MediaPlayer.h")]
     [ForeignInclude(Language.ObjC, "AudioToolbox/AudioToolbox.h")]
     [Require("Xcode.Framework", "MediaPlayer")]
     [Require("Xcode.Plist.Element", "<key>UIBackgroundModes</key><array><string>audio</string></array>")]
-    extern(iOS) class LockScreenMediaControlsiOSImpl
+    extern(iOS) static class LockScreenMediaControlsiOSImpl
     {
+        static bool _initialized = false;
 
-        StreamingPlayer _player;
-
-        public LockScreenMediaControlsiOSImpl(StreamingPlayer iosPlayer)
+        static public void Init()
         {
+            if (_initialized) return;
+
             debug_log("Registering handlers");
             RegisterHandlers(Next,Previous,Play,Pause,Seek);
-            _player = iosPlayer;
-
-            _player.HasNextChanged += OnHasNextChanged;
-            _player.HasPreviousChanged += OnHasPreviousChanged;
+            StreamingPlayer.HasNextChanged += OnHasNextChanged;
+            StreamingPlayer.HasPreviousChanged += OnHasPreviousChanged;
+            _initialized = true;
         }
 
-        void OnHasPreviousChanged(bool has)
+        static void OnHasPreviousChanged(bool has)
         {
             if (has)
                 ShowPreviousButton();
@@ -38,7 +36,7 @@ namespace StreamingPlayer
         }
 
 
-        void OnHasNextChanged(bool has)
+        static void OnHasNextChanged(bool has)
         {
             if (has)
                 ShowNextButton();
@@ -46,66 +44,66 @@ namespace StreamingPlayer
                 HideNextButton();
         }
 
-        void Next()
+        static void Next()
         {
-            _player.Next();
+            StreamingPlayer.Next();
         }
-        void Previous()
+        static void Previous()
         {
-            _player.Previous();
-        }
-
-
-        void Play()
-        {
-            _player.Resume();
+            StreamingPlayer.Previous();
         }
 
-        void Pause()
+
+        static void Play()
         {
-            _player.Pause();
+            StreamingPlayer.Resume();
         }
 
-        void Seek(double posInSec)
+        static void Pause()
+        {
+            StreamingPlayer.Pause();
+        }
+
+        static void Seek(double posInSec)
         {
             debug_log("seek from lock screen");
-            var duration = _player.Duration;
+            var duration = StreamingPlayer.Duration;
             if (duration == 0.0)
                 return;
             var progress = posInSec / duration;
-            _player.Seek(progress);
+            StreamingPlayer.Seek(progress);
         }
 
         [Foreign(Language.ObjC)]
-        void HidePreviousButton()
+        static void HidePreviousButton()
         @{
             MPRemoteCommandCenter *commandCenter = [MPRemoteCommandCenter sharedCommandCenter];
             commandCenter.previousTrackCommand.enabled = false;
         @}
 
         [Foreign(Language.ObjC)]
-        void ShowPreviousButton()
+        static void ShowPreviousButton()
         @{
             MPRemoteCommandCenter *commandCenter = [MPRemoteCommandCenter sharedCommandCenter];
             commandCenter.previousTrackCommand.enabled = true;
         @}
 
         [Foreign(Language.ObjC)]
-        void HideNextButton()
+        static void HideNextButton()
         @{
             MPRemoteCommandCenter *commandCenter = [MPRemoteCommandCenter sharedCommandCenter];
             commandCenter.nextTrackCommand.enabled = false;
         @}
 
         [Foreign(Language.ObjC)]
-        void ShowNextButton()
+        static void ShowNextButton()
         @{
             MPRemoteCommandCenter *commandCenter = [MPRemoteCommandCenter sharedCommandCenter];
             commandCenter.nextTrackCommand.enabled = true;
         @}
 
         [Foreign(Language.ObjC)]
-        void RegisterHandlers(Action next, Action previous, Action play, Action pause, Action<double> seek)
+        static void RegisterHandlers(Action next, Action previous, Action play, Action pause, Action<double> seek)
         @{
             AVAudioSession *audioSession = [AVAudioSession sharedInstance];
 
