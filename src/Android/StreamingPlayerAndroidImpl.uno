@@ -162,14 +162,6 @@ namespace StreamingPlayer
                     {
                         client = new StreamingAudioService.StreamingAudioClient(ourService)
                         {
-                            // @Override public void OnStatusChanged()
-                            // {
-                            //     @{StreamingPlayer.OnStatusChanged():Call()};
-                            // }
-                            @Override public void OnHasPrevNextChanged()
-                            {
-                                @{StreamingPlayer.HasPrevNextChanged():Call()};
-                            }
                             @Override public void OnCurrentTrackChanged()
                             {
                                 @{StreamingPlayer.OnCurrentTrackChanged():Call()};

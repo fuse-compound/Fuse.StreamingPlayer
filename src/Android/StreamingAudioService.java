@@ -329,11 +329,6 @@ public final class StreamingAudioService
         }
 
         SetCurrentTrack(track);
-        if (_streamingAudioClient != null)
-        {
-            _streamingAudioClient.OnCurrentTrackChanged();
-            _streamingAudioClient.OnHasPrevNextChanged();
-        }
     }
 
     private void Resume()
@@ -369,7 +364,6 @@ public final class StreamingAudioService
     {
         _playlist.clear();
         Collections.addAll(_playlist, tracks);
-        _streamingAudioClient.OnHasPrevNextChanged();
     }
 
     private void AddTrack(Track track)
@@ -383,7 +377,6 @@ public final class StreamingAudioService
         {
             Play(_playlist.get(CurrentTrackIndex() + 1));
         }
-        _streamingAudioClient.OnHasPrevNextChanged();
     }
 
     private void Previous()
@@ -392,7 +385,6 @@ public final class StreamingAudioService
         {
             Play(_playlist.get(CurrentTrackIndex() - 1));
         }
-        _streamingAudioClient.OnHasPrevNextChanged();
     }
 
     private void Pause()
@@ -554,8 +546,6 @@ public final class StreamingAudioService
         private StreamingAudioService _service;  // {TODO} See note below in
         private PlaybackStateCompat _lastPlayerState;
 
-        // public abstract void OnStatusChanged();
-        public abstract void OnHasPrevNextChanged();
         public abstract void OnCurrentTrackChanged();
         public abstract void OnInternalStatusChanged(int i);
 

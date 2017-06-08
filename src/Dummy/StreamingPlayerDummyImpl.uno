@@ -18,8 +18,6 @@ namespace StreamingPlayer
         static public bool HasNext = false;
 
         static public event StatusChangedHandler StatusChanged;
-        static public event Action<bool> HasPreviousChanged;
-        static public event Action<bool> HasNextChanged;
         static public event Action CurrentTrackChanged;
 
         static public bool Init() { return true; }

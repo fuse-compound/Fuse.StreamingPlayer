@@ -16,8 +16,6 @@ namespace StreamingPlayer
 
         NativeEvent _statusChanged;
         NativeEvent _currentTrackChanged;
-        NativeEvent _hasNextChanged;
-        NativeEvent _hasPreviousChanged;
 
         static bool _playerInitialized;
 
@@ -59,16 +57,8 @@ namespace StreamingPlayer
             _currentTrackChanged = new NativeEvent("currentTrackChanged");
             AddMember(_currentTrackChanged);
 
-            _hasNextChanged = new NativeEvent("hasNextChanged");
-            AddMember(_hasNextChanged);
-
-            _hasPreviousChanged = new NativeEvent("hasPreviousChanged");
-            AddMember(_hasPreviousChanged);
-
             StreamingPlayer.StatusChanged += OnStatusChanged;
             StreamingPlayer.CurrentTrackChanged += OnCurrentTrackChanged;
-            StreamingPlayer.HasNextChanged += OnHasNextChanged;
-            StreamingPlayer.HasPreviousChanged += OnHasPreviousChanged;
 
             Fuse.Platform.Lifecycle.EnteringForeground += OnEnteringForeground;
         }
@@ -77,8 +67,6 @@ namespace StreamingPlayer
         {
             debug_log("Entering foreground: state: " + StreamingPlayer.Status);
             OnStatusChanged(StreamingPlayer.Status);
-            OnHasNextChanged(StreamingPlayer.HasNext);
-            OnHasPreviousChanged(StreamingPlayer.HasPrevious);
             OnCurrentTrackChanged();
         }
 
@@ -95,18 +83,6 @@ namespace StreamingPlayer
         {
             if (CanCallBackToJS)
                 _statusChanged.RaiseAsync(status.Stringify());
-        }
-
-        void OnHasNextChanged(bool n)
-        {
-            if (CanCallBackToJS)
-                _hasNextChanged.RaiseAsync(n);
-        }
-
-        void OnHasPreviousChanged(bool p)
-        {
-            if (CanCallBackToJS)
-                _hasPreviousChanged.RaiseAsync(p);
         }
 
         void OnCurrentTrackChanged()

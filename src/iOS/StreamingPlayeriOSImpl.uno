@@ -34,8 +34,8 @@ namespace StreamingPlayer
 
         static public event StatusChangedHandler StatusChanged;
         static public event Action CurrentTrackChanged;
-        static public event Action<bool> HasNextChanged;
-        static public event Action<bool> HasPreviousChanged;
+        static internal event Action<bool> HasNextChanged;
+        static internal event Action<bool> HasPreviousChanged;
 
         static iOSPlayerState _internalState = iOSPlayerState.Unknown;
 
