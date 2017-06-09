@@ -50,13 +50,20 @@ public final class StreamingAudioService
     ArrayList<Track> _playlist = new ArrayList<Track>();
     Track _currentTrack;
 
-    public synchronized Track GetCurrentTrack()
+    private Track GetCurrentTrack()
     {
         return _currentTrack;
     }
-    public synchronized void SetCurrentTrack(Track track)
+    private void SetCurrentTrack(Track track)
     {
-        _currentTrack = track;
+        if (_currentTrack != track)
+        {
+            _currentTrack = track;
+            Bundle extras = new Bundle();
+            extras.putDouble("duration", track.Duration);
+            extras.putInt("index", CurrentTrackIndex());
+            _session.sendSessionEvent("trackChanged", extras);
+        }
     }
 
     public void setAudioClient(StreamingAudioClient bgp)
@@ -401,6 +408,19 @@ public final class StreamingAudioService
         setPlaybackState(PlaybackStateCompat.STATE_STOPPED, 0);
     }
 
+    private boolean HasNext()
+    {
+        int currentIndex = CurrentTrackIndex();
+        int playlistSize = _playlist.size();
+        return currentIndex > -1 && currentIndex < playlistSize - 1;
+    }
+
+    private boolean HasPrevious()
+    {
+        int currentIndex = CurrentTrackIndex();
+        return currentIndex > 0;
+    }
+
     //
     // Public Functions
     //
@@ -420,19 +440,6 @@ public final class StreamingAudioService
             return _player.getDuration();
         }
         return 0.0;
-    }
-
-    public synchronized boolean HasNext()
-    {
-        int currentIndex = CurrentTrackIndex();
-        int playlistSize = _playlist.size();
-        return currentIndex > -1 && currentIndex < playlistSize - 1;
-    }
-
-    public synchronized boolean HasPrevious()
-    {
-        int currentIndex = CurrentTrackIndex();
-        return currentIndex > 0;
     }
 
     //
@@ -539,15 +546,14 @@ public final class StreamingAudioService
     public static abstract class StreamingAudioClient extends MediaControllerCompat.Callback
     {
         private MediaControllerCompat _controller;
-        private StreamingAudioService _service;  // {TODO} See note below in
         private PlaybackStateCompat _lastPlayerState;
+        private double _duration = -1;
 
         public abstract void OnCurrentTrackChanged(int index);
         public abstract void OnInternalStatusChanged(int i);
 
         public StreamingAudioClient(StreamingAudioService service) throws RemoteException
         {
-            _service = service; // {TODO} See note below in
             _controller = new MediaControllerCompat(service.getApplicationContext(), service._session.getSessionToken());
             _controller.registerCallback(this);
         }
@@ -613,45 +619,21 @@ public final class StreamingAudioService
             _lastPlayerState = state;
         }
 
-        //
-        // {TODO} This sucks, we are force to do this hacky stuff as the playlist is not controlled
-        //        by the android api.
-        //        What I want to do is use the MediaSession's queue so that we dont have to manage
-        //        it, we dont need our own track items and also so things work with more google
-        //        systems.
-        //        However android's QueueItem is final and is missing a bunch of data we want
-        //        (e.g. artist). This means we still need to keep our own playlist so we have
-        //        the details we need to populate the metadata. If we only allowed local files then
-        //        we wouldnt need to provide our own metadata as we could use the metadata querying
-        //        system of the platform, however we also need streaming from the web.
-        //
-        //        I'm pretty sick on android audio right now and just want to get a v1 out. We can
-        //        revisit this over time to make is solid
-        //
-
-        public final int CurrentTrackIndex()
+        @Override
+        public void onSessionEvent(String event, Bundle extras)
         {
-            return _service.CurrentTrackIndex();
-        }
+            super.onExtrasChanged(extras);
 
-        public final Track GetCurrentTrack()
-        {
-            return _service.GetCurrentTrack();
+            if (event.equals("trackChanged"))
+            {
+                _duration = extras.getDouble("duration");
+                OnCurrentTrackChanged(extras.getInt("index"));
+            }
         }
 
         public final double GetCurrentTrackDuration()
         {
-            return _service.GetCurrentTrackDuration();
-        }
-
-        public final boolean HasNext()
-        {
-            return _service.HasNext();
-        }
-
-        public final boolean HasPrevious()
-        {
-            return _service.HasPrevious();
+            return _duration;
         }
     }
 }

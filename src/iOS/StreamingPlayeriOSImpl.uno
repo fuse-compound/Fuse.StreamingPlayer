@@ -387,7 +387,7 @@ namespace StreamingPlayer
                 OnHasNextOrHasPreviousChanged();
         }
 
-        static public int Next()
+        static public void Next()
         {
             debug_log("UNO: trying next (hasnext=" + HasNext + ")");
             if (HasNext)
@@ -396,12 +396,10 @@ namespace StreamingPlayer
                 var newTrack = _tracks[newIndex];
                 Play(newTrack);
                 CurrentTrack = newTrack;
-                return newIndex;
             }
-            return -1;
         }
 
-        static public int Previous()
+        static public void Previous()
         {
             debug_log("UNO: trying previous (hasprevious=" + HasPrevious + ")");
             if (HasPrevious)
@@ -410,9 +408,7 @@ namespace StreamingPlayer
                 var newTrack = _tracks[newIndex];
                 Play(newTrack);
                 CurrentTrack = newTrack;
-                return newIndex;
             }
-            return -1;
         }
 
         static void OnHasNextOrHasPreviousChanged()

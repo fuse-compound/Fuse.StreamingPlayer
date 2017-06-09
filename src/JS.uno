@@ -86,13 +86,15 @@ namespace StreamingPlayer
         {
             if (!_playerInitialized) return null;
             debug_log("Next was called from JS");
-            return StreamingPlayer.Next();
+            StreamingPlayer.Next();
+            return null;
         }
 
         public object Previous(Context c, object[] args)
         {
             if (!_playerInitialized) return null;
-            return StreamingPlayer.Previous();
+            StreamingPlayer.Previous();
+            return null;
         }
 
         public object SetPlaylist(Context c, object[] args)
@@ -183,7 +185,6 @@ namespace StreamingPlayer
         {
             if (!_playerInitialized) return false;
             return _currentTrackIndex + 1 < _playlistLength;
-            return StreamingPlayer.HasNext;
         }
 
         bool GetHasPrevious()

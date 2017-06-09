@@ -37,16 +37,6 @@ namespace StreamingPlayer
             get { return _binder != null; }
         }
 
-        static public bool HasNext
-        {
-            get { return IsConnected ? GetHasNextImpl(_client) : false; }
-        }
-
-        static public bool HasPrevious
-        {
-            get { return IsConnected ? GetHasPreviousImpl(_client) : false; }
-        }
-
         static public double Progress
         {
             get { return IsConnected ? (GetProgress(_client) / 1000.0) : 0; }
@@ -55,27 +45,6 @@ namespace StreamingPlayer
         static public double Duration
         {
             get { return IsConnected ? (GetDuration(_client) / 1000.0) : 0; }
-        }
-
-        static public Track CurrentTrack
-        {
-            get
-            {
-                if (IsConnected) {
-                    var currentTrackJava = GetCurrentTrackImpl(_client);
-                    if (currentTrackJava != null)
-                    {
-                        var name = TrackAndroidImpl.GetName(currentTrackJava);
-                        var artist = TrackAndroidImpl.GetArtist(currentTrackJava);
-                        var url = TrackAndroidImpl.GetUrl(currentTrackJava);
-                        var artworkUrl = TrackAndroidImpl.GetArtworkUrl(currentTrackJava);
-                        var duration = TrackAndroidImpl.GetDuration(currentTrackJava);
-                        var ret = new Track(name, artist, url, artworkUrl, duration);
-                        return ret;
-                    }
-                }
-                return null;
-            }
         }
 
         static public PlayerStatus Status
@@ -198,8 +167,6 @@ namespace StreamingPlayer
         // Events
 
         static public event Action<int> CurrentTrackChanged;
-        static public event Action<bool> HasNextChanged;
-        static public event Action<bool> HasPreviousChanged;
         static public event StatusChangedHandler StatusChanged;
 
         static void OnStatusChanged()
@@ -207,14 +174,6 @@ namespace StreamingPlayer
             debug_log("Status changed (uno): " + Status);
             if (StatusChanged != null)
                 StatusChanged(Status);
-        }
-
-        static void HasPrevNextChanged()
-        {
-            if (HasNextChanged != null)
-                HasNextChanged(HasNext);
-            if (HasPreviousChanged != null)
-                HasPreviousChanged(HasPrevious);
         }
 
         static void OnCurrentTrackChanged(int index)
@@ -300,7 +259,6 @@ namespace StreamingPlayer
             }
             if (_pendingPlay)
                 Play(_pendingTrack);
-            HasPrevNextChanged();
         }
 
 
@@ -440,58 +398,30 @@ namespace StreamingPlayer
             sClient.SetPlaylist(tracks);
         @}
 
-        static public int Next()
+        static public void Next()
         {
             if (IsConnected)
-                return NextImpl(_client);
-            else
-                return 0;
+                NextImpl(_client);
+        }
+
+        static public void Previous()
+        {
+            if (IsConnected)
+                PreviousImpl(_client);
         }
 
         [Foreign(Language.Java)]
-        static int NextImpl(Java.Object client)
+        static void NextImpl(Java.Object client)
         @{
             StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
             sClient.Next();
-            return sClient.CurrentTrackIndex();
         @}
 
-        static public int Previous()
-        {
-            if (IsConnected)
-                return PreviousImpl(_client);
-            else
-                return 0;
-        }
-
         [Foreign(Language.Java)]
-        static int PreviousImpl(Java.Object client)
+        static void PreviousImpl(Java.Object client)
         @{
             StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
             sClient.Previous();
-            return sClient.CurrentTrackIndex();
         @}
-
-        [Foreign(Language.Java)]
-        static Java.Object GetCurrentTrackImpl(Java.Object client)
-        @{
-            StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
-            return sClient.GetCurrentTrack();
-        @}
-
-        [Foreign(Language.Java)]
-        static bool GetHasNextImpl(Java.Object client)
-        @{
-            StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
-            return sClient.HasNext();
-        @}
-
-        [Foreign(Language.Java)]
-        static bool GetHasPreviousImpl(Java.Object client)
-        @{
-            StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
-            return sClient.HasPrevious();
-        @}
-
     }
 }
