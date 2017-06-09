@@ -142,10 +142,7 @@ namespace StreamingPlayer
 
         object Play(Context c, object[] args)
         {
-            var track = args.ValueOrDefault<Track>(0, null);
-            if (track == null)
-                throw new Exception("Play needs a {name,url,streamUrl} argument");
-            StreamingPlayer.Play(track);
+            StreamingPlayer.Play();
             return null;
         }
 

@@ -21,23 +21,102 @@ namespace StreamingPlayer
     extern(iOS) static class StreamingPlayer
     {
 
-        static readonly string _statusName = "status";
-        static readonly string _isPlaybackLikelyToKeepUp = "playbackLikelyToKeepUp";
-
         static ObjC.Object _player;
-        static ObjC.Object CurrentPlayerItem
-        {
-            get { return GetCurrentPlayerItem(_player); }
-        }
-
-        static List<Track> _tracks = new List<Track>();
+        static List<Track> _playlist = new List<Track>();
 
         static public event StatusChangedHandler StatusChanged;
         static public event Action<int> CurrentTrackChanged;
         static internal event Action<bool> HasNextChanged;
         static internal event Action<bool> HasPreviousChanged;
-
+        static readonly string _statusName = "status";
+        static readonly string _isPlaybackLikelyToKeepUp = "playbackLikelyToKeepUp";
         static iOSPlayerState _internalState = iOSPlayerState.Unknown;
+        static PlayerStatus _status = PlayerStatus.Stopped;
+        static bool DidAddAVPlayerItemDidPlayToEndTimeNotification = false;
+        static int _currentTrackIndex = -1;
+
+        static ObjC.Object CurrentPlayerItem
+        {
+            get { return GetCurrentPlayerItem(_player); }
+        }
+
+        static public double Duration
+        {
+            get { return (_player != null) ? GetDuration(_player) : 0.0; }
+        }
+
+        static public double Progress
+        {
+            get { return (_player != null) ? GetPosition(_player) : 0.0; }
+        }
+
+        static public PlayerStatus Status
+        {
+            get
+            {
+                if (_player != null)
+                {
+                    switch (_internalState)
+                    {
+                        case iOSPlayerState.Unknown:
+                            return PlayerStatus.Stopped;
+                        case iOSPlayerState.Initialized:
+                            return _status;
+                        default:
+                            return PlayerStatus.Error;
+                    }
+                }
+                return PlayerStatus.Error;
+            }
+            private set
+            {
+                _status = value;
+                OnStatusChanged();
+            }
+        }
+
+        static bool IsLikelyToKeepUp
+        {
+            get { return GetIsLikelyToKeepUp(_player); }
+        }
+
+        static public Track CurrentTrack
+        {
+            get
+            {
+                if (_currentTrackIndex==-1)
+                    return null;
+                else
+                    return _playlist[_currentTrackIndex];
+            }
+            set
+            {
+                if (CurrentTrack != value)
+                {
+                    _currentTrackIndex = _playlist.IndexOf(value);
+                    OnCurrentTrackChanged();
+                }
+            }
+        }
+
+        static public bool HasNext
+        {
+            get
+            {
+                var ret = _currentTrackIndex < _playlist.Count - 1;
+                return ret;
+            }
+        }
+
+        static public bool HasPrevious
+        {
+            get
+            {
+                var ret = _currentTrackIndex > 0;
+                return ret;
+            }
+        }
+
 
         static void OnIsLikelyToKeepUpChanged()
         {
@@ -62,9 +141,13 @@ namespace StreamingPlayer
             return [p rate];
         @}
 
-        static public void Play(Track track)
+        static public void Play()
         {
             debug_log("Play UNO called");
+            if (CurrentTrack == null) return;
+
+            Track track = CurrentTrack;
+
             Status = PlayerStatus.Loading;
             if (_player == null){
                 _player = Create(track.Url);
@@ -85,7 +168,6 @@ namespace StreamingPlayer
 
             NowPlayingInfoCenter.SetTrackInfo(track);
 
-            CurrentTrack = track;
             if (_internalState == iOSPlayerState.Initialized) {
                 PlayImpl(_player);
             }
@@ -156,42 +238,6 @@ namespace StreamingPlayer
             NowPlayingInfoCenter.SetProgress(toProgress * Duration);
         }
 
-        static public double Duration
-        {
-            get { return (_player != null) ? GetDuration(_player) : 0.0; }
-        }
-
-        static public double Progress
-        {
-            get { return (_player != null) ? GetPosition(_player) : 0.0; }
-        }
-
-        static PlayerStatus _status = PlayerStatus.Stopped;
-        static public PlayerStatus Status
-        {
-            get
-            {
-                if (_player != null)
-                {
-                    switch (_internalState)
-                    {
-                        case iOSPlayerState.Unknown:
-                            return PlayerStatus.Stopped;
-                        case iOSPlayerState.Initialized:
-                            return _status;
-                        default:
-                            return PlayerStatus.Error;
-                    }
-                }
-                return PlayerStatus.Error;
-            }
-            private set
-            {
-                _status = value;
-                OnStatusChanged();
-            }
-        }
-
         static string InternalStateToString(int s)
         {
             switch (s)
@@ -223,11 +269,6 @@ namespace StreamingPlayer
 
             if (StatusChanged != null)
                 StatusChanged(Status);
-        }
-
-        static bool IsLikelyToKeepUp
-        {
-            get { return GetIsLikelyToKeepUp(_player); }
         }
 
         [Foreign(Language.ObjC)]
@@ -309,7 +350,6 @@ namespace StreamingPlayer
             return p.currentItem;
         @}
 
-        static bool DidAddAVPlayerItemDidPlayToEndTimeNotification = false;
         static public bool Init()
         {
             LockScreenMediaControlsiOSImpl.Init();
@@ -322,55 +362,18 @@ namespace StreamingPlayer
             return true;
         }
 
-        static Track _currentTrack;
-        static public Track CurrentTrack
-        {
-            get
-            {
-                return _currentTrack;
-            }
-            set
-            {
-                _currentTrack = value;
-                OnCurrentTrackChanged();
-            }
-        }
-
-        static public bool HasNext
-        {
-            get
-            {
-                if (CurrentTrack == null) {
-                    return false;
-                }
-                var index = _tracks.IndexOf(CurrentTrack);
-                var ret = index > -1 && index < _tracks.Count - 1;
-                return ret;
-            }
-        }
-
-        static public bool HasPrevious
-        {
-            get
-            {
-                if (CurrentTrack == null)
-                    return false;
-                var ret = _tracks.IndexOf(CurrentTrack) > 0;
-                return ret;
-            }
-        }
 
         static void OnCurrentTrackChanged()
         {
             if (CurrentTrackChanged != null)
-                CurrentTrackChanged(_tracks.IndexOf(_currentTrack));
+                CurrentTrackChanged(_currentTrackIndex);
             OnHasNextOrHasPreviousChanged();
         }
 
         static public void SetPlaylist(Track[] tracks)
         {
             debug_log "iOS: setting playlist";
-            _tracks.Clear();
+            _playlist.Clear();
             if (tracks == null)
             {
                 debug_log("tracks was null. returning");
@@ -379,10 +382,10 @@ namespace StreamingPlayer
             debug_log("tracks wasnt null. adding. CurrentTrack = >" + CurrentTrack + "<");
             foreach (var t in tracks)
             {
-                _tracks.Add(t);
+                _playlist.Add(t);
             }
-            if (CurrentTrack==null)
-                CurrentTrack = _tracks[0];
+            if (CurrentTrack == null)
+                CurrentTrack = _playlist[0];
             else
                 OnHasNextOrHasPreviousChanged();
         }
@@ -392,10 +395,10 @@ namespace StreamingPlayer
             debug_log("UNO: trying next (hasnext=" + HasNext + ")");
             if (HasNext)
             {
-                var newIndex = _tracks.IndexOf(CurrentTrack) + 1;
-                var newTrack = _tracks[newIndex];
-                Play(newTrack);
+                var newIndex = _currentTrackIndex + 1;
+                var newTrack = _playlist[newIndex];
                 CurrentTrack = newTrack;
+                Play();
             }
         }
 
@@ -404,10 +407,10 @@ namespace StreamingPlayer
             debug_log("UNO: trying previous (hasprevious=" + HasPrevious + ")");
             if (HasPrevious)
             {
-                var newIndex = _tracks.IndexOf(CurrentTrack) - 1;
-                var newTrack = _tracks[newIndex];
-                Play(newTrack);
+                var newIndex = _currentTrackIndex - 1;
+                var newTrack = _playlist[newIndex];
                 CurrentTrack = newTrack;
+                Play();
             }
         }
 

@@ -15,7 +15,6 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.os.SystemClock;
-import android.support.v4.app.BundleCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaButtonReceiver;
@@ -48,20 +47,26 @@ public final class StreamingAudioService
     // Uno interaction
     StreamingAudioClient _streamingAudioClient;
     ArrayList<Track> _playlist = new ArrayList<Track>();
-    Track _currentTrack;
+    int _currentTrackIndex = -1;
 
     private Track GetCurrentTrack()
     {
-        return _currentTrack;
+        return _playlist.get(_currentTrackIndex);
     }
-    private void SetCurrentTrack(Track track)
+
+    private void SetCurrentTrackIndex(int index)
     {
-        if (_currentTrack != track)
+        if (_currentTrackIndex != index)
         {
-            _currentTrack = track;
+            _currentTrackIndex = index;
             Bundle extras = new Bundle();
-            extras.putDouble("duration", track.Duration);
-            extras.putInt("index", CurrentTrackIndex());
+            extras.putInt("index", index);
+
+            if (index == -1)
+                extras.putDouble("duration", 0);
+            else
+                extras.putDouble("duration", _playlist.get(index).Duration);
+
             _session.sendSessionEvent("trackChanged", extras);
         }
     }
@@ -165,10 +170,6 @@ public final class StreamingAudioService
                 if (action.equals("Resume"))
                 {
                     Resume();
-                }
-                else if (action.equals("PlayTrack"))
-                {
-                    Play((Track) extras.getParcelable("track"));
                 }
                 else if (action.equals("SetPlaylist"))
                 {
@@ -309,7 +310,7 @@ public final class StreamingAudioService
     // Actions
     //
 
-    private void Play(Track track)
+    private void Play(int index)
     {
         if (_prepared)
         {
@@ -322,6 +323,7 @@ public final class StreamingAudioService
             _player.reset();
             _state = AndroidPlayerState.Initialized;
             Logger.Log("SetDataSource: state: " + _state);
+            Track track = _playlist.get(index);
             _player.setDataSource(track.Url);
             setPlaybackState(PlaybackStateCompat.STATE_BUFFERING, 0);
             _player.prepareAsync();
@@ -331,7 +333,7 @@ public final class StreamingAudioService
             Logger.Log("Exception while setting MediaPlayer DataSource");
         }
 
-        SetCurrentTrack(track);
+        SetCurrentTrackIndex(index);
     }
 
     private void Resume()
@@ -378,7 +380,7 @@ public final class StreamingAudioService
     {
         if (HasNext())
         {
-            Play(_playlist.get(CurrentTrackIndex() + 1));
+            Play(CurrentTrackIndex() + 1);
         }
     }
 
@@ -386,7 +388,7 @@ public final class StreamingAudioService
     {
         if (HasPrevious())
         {
-            Play(_playlist.get(CurrentTrackIndex() - 1));
+            Play(CurrentTrackIndex() - 1);
         }
     }
 
@@ -558,11 +560,9 @@ public final class StreamingAudioService
             _controller.registerCallback(this);
         }
 
-        public final void Play(Track track)
+        public final void Play()
         {
-            Bundle bTrack = new Bundle();
-            bTrack.putParcelable("track", track);
-            _controller.getTransportControls().sendCustomAction("PlayTrack", bTrack);
+            _controller.getTransportControls().play();
         }
 
         public final void Resume()

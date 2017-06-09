@@ -29,8 +29,13 @@ namespace StreamingPlayer
         static Java.Object _serviceConnection; // ServiceConnection
         static Java.Object _binder; // StreamingAudioService.LocalBinder
         static Java.Object _client;
+
+        static bool _initialized;
+        static bool _permittedToPlay = false;
         static PlayerStatus _status = PlayerStatus.Stopped;
         static int _currentTrackIndex = -1;
+        static Track[] _pendingPlaylist;
+        static bool _pendingPlay = false;
 
         static public bool IsConnected
         {
@@ -62,8 +67,6 @@ namespace StreamingPlayer
         //------------------------------------------------------------
         // Initializing
 
-        static bool _initialized;
-        static bool _permittedToPlay = false;
         static public bool Init()
         {
             if (!_initialized)
@@ -224,41 +227,37 @@ namespace StreamingPlayer
             return new Track(name, artist, url, artworkUrl, duration);
         @}
 
-        static bool _pendingPlay = false;
-        static Track _pendingTrack;
-        static public void Play(Track track)
+        static public void Play()
         {
             if (_service == null)
                 CreateService();
 
             if (IsConnected)
             {
-                var javaTrack = ToJavaTrack(track.Name, track.Artist, track.Url, track.ArtworkUrl, track.Duration);
                 Status = PlayerStatus.Loading;
-                PlayImpl(_client, javaTrack);
+                PlayImpl(_client);
                 _pendingPlay = false;
             } else {
                 _pendingPlay = true;
-                _pendingTrack = track;
             }
         }
 
         [Foreign(Language.Java)]
-        static void PlayImpl(Java.Object client, Java.Object track)
+        static void PlayImpl(Java.Object client)
         @{
             StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
-            sClient.Play((Track)track);
+            sClient.Play();
         @}
 
 
         static void ConnectedToBackgroundService()
         {
-            if (_tempPlaylist != null) {
-                SetPlaylist(_tempPlaylist);
-                _tempPlaylist = null;
+            if (_pendingPlaylist != null) {
+                SetPlaylist(_pendingPlaylist);
+                _pendingPlaylist = null;
             }
             if (_pendingPlay)
-                Play(_pendingTrack);
+                Play();
         }
 
 
@@ -342,7 +341,7 @@ namespace StreamingPlayer
         @}
 
 
-        static Track[] _tempPlaylist;
+
         //int id, string name, string url, string artworkUrl, double duration
         static public void SetPlaylist(Track[] tracks)
         {
@@ -368,8 +367,8 @@ namespace StreamingPlayer
                 debug_log("Android: set current playlist");
                 SetPlaylistImpl(_client, names, artists, urls, artworkUrls, durations);
             } else {
-                debug_log("Android: caching as _tempPlaylist");
-                _tempPlaylist = tracks;
+                debug_log("Android: caching as _pendingPlaylist");
+                _pendingPlaylist = tracks;
             }
         }
 
