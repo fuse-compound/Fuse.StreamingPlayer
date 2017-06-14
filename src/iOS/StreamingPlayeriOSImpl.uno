@@ -20,24 +20,229 @@ namespace StreamingPlayer
     [ForeignInclude(Language.ObjC, "CoreImage/CoreImage.h")]
     extern(iOS) static class StreamingPlayer
     {
-
-        static ObjC.Object _player;
-        static List<Track> _playlist = new List<Track>();
-
+        // Events
         static public event StatusChangedHandler StatusChanged;
-        static public event Action<int> CurrentTrackChanged;
+        static public event Action<Track> CurrentTrackChanged;
         static internal event Action<bool> HasNextChanged;
         static internal event Action<bool> HasPreviousChanged;
+
+        // Player State
+        static ObjC.Object _player;
         static readonly string _statusName = "status";
         static readonly string _isPlaybackLikelyToKeepUp = "playbackLikelyToKeepUp";
         static iOSPlayerState _internalState = iOSPlayerState.Unknown;
         static PlayerStatus _status = PlayerStatus.Stopped;
         static bool DidAddAVPlayerItemDidPlayToEndTimeNotification = false;
-        static int _currentTrackIndex = -1;
 
-        static ObjC.Object CurrentPlayerItem
+        // Playlist, History & Current
+
+        static Dictionary<int, Track> _tracks = new Dictionary<int, Track>();
+        static List<int> _trackPlaylist = new List<int>();
+        static int _currentTrackUID = -1;
+        static List<int> _trackHistory = new List<int>();
+        static int _trackPlaylistCurrentIndex = -1;
+        static int _trackHistoryCurrentIndex = -1;
+
+        static int PlaylistNextTrackUID()
         {
-            get { return GetCurrentPlayerItem(_player); }
+            int i = _trackPlaylistCurrentIndex + 1;
+            if (i >= _trackPlaylist.Count)
+                return -1;
+            return _trackPlaylist[i];
+        }
+
+        static int PlaylistPrevTrackUID()
+        {
+            int i = _trackPlaylistCurrentIndex - 1;
+            if (i < 0)
+                return -1;
+            return _trackPlaylist[i];
+        }
+
+        static int HistoryAt(int index)
+        {
+            return _trackHistory[_trackHistory.Count - (1 + index)];
+        }
+
+        static int HistoryNextTrackUID()
+        {
+            int i = _trackHistoryCurrentIndex - 1;
+            if (i < 0)
+                return -1;
+            return HistoryAt(i);
+        }
+
+        static int HistoryPrevTrackUID()
+        {
+            int i = _trackHistoryCurrentIndex + 1;
+            if (i >= _trackHistory.Count)
+                return -1;
+            return HistoryAt(i);
+        }
+
+        // Modify Playlist and History
+
+        static int MoveToNextPlaylistTrack() // THIS NEEDS TO CHOP OFF THE END OF THE HISTORY BEFORE PUSH
+        {
+            int uid = PlaylistNextTrackUID();
+            if (uid >=0)
+            {
+                int cur = _trackPlaylistCurrentIndex;
+                _trackPlaylistCurrentIndex += 1;
+                if (cur >= 0)
+                {
+                    _trackHistory.Add(uid);
+                    _trackHistoryCurrentIndex = 0;
+                }
+            }
+            return uid;
+        }
+
+        static int MoveToPrevPlaylistTrack()
+        {
+            int uid = PlaylistPrevTrackUID();
+            if (uid >=0)
+            {
+                int cur = _trackPlaylistCurrentIndex;
+                _trackPlaylistCurrentIndex -= 1;
+                _trackHistory.Add(uid);
+                _trackHistoryCurrentIndex = 0;
+            }
+            return uid;
+        }
+
+        static int MoveToIndexedPlaylistTrack(int index)
+        {
+            if (index>=0 && index<_trackPlaylist.Count)
+            {
+                int uid = _trackPlaylist[index];
+                if (uid >= 0)
+                {
+                    int cur = _trackPlaylistCurrentIndex;
+                    _trackPlaylistCurrentIndex -= index;
+                    _trackHistory.Add(uid);
+                    _trackHistoryCurrentIndex = 0;
+                }
+                return uid;
+            }
+            return -1;
+        }
+
+        static int MoveBackInHistory()
+        {
+            int uid = HistoryPrevTrackUID();
+            if (uid >=0)
+            {
+                _trackHistoryCurrentIndex += 1;
+                int playlistIndex = _trackPlaylist.IndexOf(uid); // -1 if not found
+                if (playlistIndex >= 0)
+                    _trackPlaylistCurrentIndex = playlistIndex;
+            }
+            return uid;
+        }
+
+        static int MoveForwardInHistory()
+        {
+            int uid = HistoryNextTrackUID();
+            if (uid >=0)
+            {
+                _trackHistoryCurrentIndex -= 1;
+                int playlistIndex = _trackPlaylist.IndexOf(uid); // -1 if not found
+                if (playlistIndex >= 0)
+                    _trackPlaylistCurrentIndex = playlistIndex;
+                return uid;
+            }
+            else
+            {
+                return MoveToNextPlaylistTrack();
+            }
+        }
+
+        static void ClearHistory()
+        {
+            // neccesary when people want to set the playlist and not let it be possible
+            // to go back in history to tracks not in the playlist.
+            _trackHistory.Clear();
+            _trackHistoryCurrentIndex = -1;
+
+            // We no longer need any tracks that arent in the playlist as there is no way
+            // to navigate to them
+            List<Track> keep = new List<Track>();
+
+            foreach (int uid in _trackPlaylist)
+                keep.Add(_tracks[uid]);
+
+            _tracks.Clear();
+
+            foreach (Track track in keep)
+                _tracks.Add(track.UID, track);
+        }
+
+        public static void SetPlaylist(Track[] tracks)
+        {
+            _trackPlaylist.Clear();
+
+            List<int> uids = new List<int>();
+
+            foreach (Track track in tracks)
+            {
+                _tracks.Add(track.UID, track);
+                _trackPlaylist.Add(track.UID);
+            }
+
+            _trackPlaylistCurrentIndex = _trackPlaylist.IndexOf(_currentTrackUID);
+        }
+
+        //----------------------------
+        // Control of the current Track
+
+        static public void MakeTrackCurrentByUID(int uid)
+        {
+            Track track;
+            int originalUID = _currentTrackUID;
+            if (uid >= 0)
+            {
+                track = _tracks[uid];
+
+                Status = PlayerStatus.Loading;
+                if (_player == null){
+                    _player = Create(track.Url);
+                    ObserverProxy.AddObserver(CurrentPlayerItem, _isPlaybackLikelyToKeepUp, 0, OnIsLikelyToKeepUpChanged);
+                    ObserverProxy.AddObserver(CurrentPlayerItem, _statusName, 0, OnInternalStateChanged);
+                }
+                else
+                {
+                    _internalState = iOSPlayerState.Unknown;
+                    ObserverProxy.RemoveObserver(CurrentPlayerItem, _statusName);
+                    ObserverProxy.RemoveObserver(CurrentPlayerItem, _isPlaybackLikelyToKeepUp);
+
+                    AssignNewPlayerItemWithUrl(_player, track.Url);
+
+                    ObserverProxy.AddObserver(CurrentPlayerItem, _isPlaybackLikelyToKeepUp, 0, OnIsLikelyToKeepUpChanged);
+                    ObserverProxy.AddObserver(CurrentPlayerItem, _statusName, 0, OnInternalStateChanged);
+                }
+
+                NowPlayingInfoCenter.SetTrackInfo(track);
+
+                if (_internalState == iOSPlayerState.Initialized)
+                {
+                    PlayImpl(_player);
+                }
+
+                _currentTrackUID = uid;
+            }
+            else
+            {
+                _currentTrackUID = -1;
+                track = null;
+            }
+
+            if (_currentTrackUID != originalUID)
+            {
+                _trackPlaylistCurrentIndex = _trackPlaylist.IndexOf(_currentTrackUID);
+                CurrentTrackChanged(track);
+                OnHasNextOrHasPreviousChanged();
+            }
         }
 
         static public double Duration
@@ -84,39 +289,9 @@ namespace StreamingPlayer
         {
             get
             {
-                if (_currentTrackIndex==-1)
-                    return null;
-                else
-                    return _playlist[_currentTrackIndex];
-            }
-            set
-            {
-                if (CurrentTrack != value)
-                {
-                    _currentTrackIndex = _playlist.IndexOf(value);
-                    OnCurrentTrackChanged();
-                }
+                return _tracks[_currentTrackUID];
             }
         }
-
-        static public bool HasNext
-        {
-            get
-            {
-                var ret = _currentTrackIndex < _playlist.Count - 1;
-                return ret;
-            }
-        }
-
-        static public bool HasPrevious
-        {
-            get
-            {
-                var ret = _currentTrackIndex > 0;
-                return ret;
-            }
-        }
-
 
         static void OnIsLikelyToKeepUpChanged()
         {
@@ -141,38 +316,6 @@ namespace StreamingPlayer
             return [p rate];
         @}
 
-        static public void Play()
-        {
-            debug_log("Play UNO called");
-            if (CurrentTrack == null) return;
-
-            Track track = CurrentTrack;
-
-            Status = PlayerStatus.Loading;
-            if (_player == null){
-                _player = Create(track.Url);
-                ObserverProxy.AddObserver(CurrentPlayerItem, _isPlaybackLikelyToKeepUp, 0, OnIsLikelyToKeepUpChanged);
-                ObserverProxy.AddObserver(CurrentPlayerItem, _statusName, 0, OnInternalStateChanged);
-            }
-            else
-            {
-                _internalState = iOSPlayerState.Unknown;
-                ObserverProxy.RemoveObserver(CurrentPlayerItem, _statusName);
-                ObserverProxy.RemoveObserver(CurrentPlayerItem, _isPlaybackLikelyToKeepUp);
-
-                AssignNewPlayerItemWithUrl(_player, track.Url);
-
-                ObserverProxy.AddObserver(CurrentPlayerItem, _isPlaybackLikelyToKeepUp, 0, OnIsLikelyToKeepUpChanged);
-                ObserverProxy.AddObserver(CurrentPlayerItem, _statusName, 0, OnInternalStateChanged);
-            }
-
-            NowPlayingInfoCenter.SetTrackInfo(track);
-
-            if (_internalState == iOSPlayerState.Initialized) {
-                PlayImpl(_player);
-            }
-        }
-
         static void PlayerItemDidReachEnd()
         {
             debug_log("We did reach the end of our track");
@@ -195,6 +338,11 @@ namespace StreamingPlayer
                 }
             ];
         @}
+
+        static public void Play()
+        {
+            MakeTrackCurrentByUID(_currentTrackUID);
+        }
 
         static public void Resume()
         {
@@ -343,6 +491,8 @@ namespace StreamingPlayer
             [p seekToTime: CMTimeMake(position * 1000, 1000)];
         @}
 
+        static ObjC.Object CurrentPlayerItem { get { return GetCurrentPlayerItem(_player); } }
+
         [Foreign(Language.ObjC)]
         static ObjC.Object GetCurrentPlayerItem(ObjC.Object player)
         @{
@@ -362,64 +512,28 @@ namespace StreamingPlayer
             return true;
         }
 
-
-        static void OnCurrentTrackChanged()
+        public static void Next()
         {
-            if (CurrentTrackChanged != null)
-                CurrentTrackChanged(_currentTrackIndex);
-            OnHasNextOrHasPreviousChanged();
+            MakeTrackCurrentByUID(MoveToNextPlaylistTrack());
         }
 
-        static public void SetPlaylist(Track[] tracks)
+        public static void Previous()
         {
-            debug_log "iOS: setting playlist";
-            _playlist.Clear();
-            if (tracks == null)
-            {
-                debug_log("tracks was null. returning");
-                return;
-            }
-            debug_log("tracks wasnt null. adding. CurrentTrack = >" + CurrentTrack + "<");
-            foreach (var t in tracks)
-            {
-                _playlist.Add(t);
-            }
-            if (CurrentTrack == null)
-                CurrentTrack = _playlist[0];
-            else
-                OnHasNextOrHasPreviousChanged();
-        }
-
-        static public void Next()
-        {
-            debug_log("UNO: trying next (hasnext=" + HasNext + ")");
-            if (HasNext)
-            {
-                var newIndex = _currentTrackIndex + 1;
-                var newTrack = _playlist[newIndex];
-                CurrentTrack = newTrack;
-                Play();
-            }
-        }
-
-        static public void Previous()
-        {
-            debug_log("UNO: trying previous (hasprevious=" + HasPrevious + ")");
-            if (HasPrevious)
-            {
-                var newIndex = _currentTrackIndex - 1;
-                var newTrack = _playlist[newIndex];
-                CurrentTrack = newTrack;
-                Play();
-            }
+            MakeTrackCurrentByUID(MoveToPrevPlaylistTrack());
         }
 
         static void OnHasNextOrHasPreviousChanged()
         {
             if (HasNextChanged != null)
+            {
+                var hasNext = PlaylistNextTrackUID() > -1;
                 HasNextChanged(HasNext);
+            }
             if (HasPreviousChanged != null)
-                HasPreviousChanged(HasPrevious);
+            {
+                var hasPrev = PlaylistPrevTrackUID() > -1;
+                HasPreviousChanged(hasPrev);
+            }
         }
     }
 }

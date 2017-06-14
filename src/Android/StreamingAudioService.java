@@ -21,10 +21,11 @@ import android.support.v4.media.session.MediaButtonReceiver;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
+import android.util.SparseArray;
 import android.view.KeyEvent;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Stack;
 
 public final class StreamingAudioService
         extends Service
@@ -46,30 +47,237 @@ public final class StreamingAudioService
 
     // Uno interaction
     StreamingAudioClient _streamingAudioClient;
-    ArrayList<Track> _playlist = new ArrayList<Track>();
-    int _currentTrackIndex = -1;
 
-    private Track GetCurrentTrack()
+    //--------------------------
+
+    private SparseArray<Track> _tracks = new SparseArray<>();
+    private ArrayList<Integer> _trackPlaylist = new ArrayList<Integer>();
+    private int _currentTrackUID = -1; // Must only EVER be set by MakeTrackCurrentByUID(uid)
+    private Stack<Integer> _trackHistory = new Stack<Integer>();
+    private int _trackPlaylistCurrentIndex = -1;
+    private int _trackHistoryCurrentIndex = -1; // set to 0 every time we move structurally.
+
+    // Query Playlist and History
+
+    private int PlaylistNextTrackUID()
     {
-        return _playlist.get(_currentTrackIndex);
+        int i = _trackPlaylistCurrentIndex + 1;
+        if (i >= _trackPlaylist.size())
+            return -1;
+        return _trackPlaylist.get(i);
     }
 
-    private void SetCurrentTrackIndex(int index)
+    private int PlaylistPrevTrackUID()
     {
-        if (_currentTrackIndex != index)
+        int i = _trackPlaylistCurrentIndex - 1;
+        if (i < 0)
+            return -1;
+        return _trackPlaylist.get(i);
+    }
+
+    private int HistoryNextTrackUID()
+    {
+        int i = _trackHistoryCurrentIndex - 1;
+        if (i < 0)
+            return -1;
+        return _trackHistory.get(i);
+    }
+
+    private int HistoryPrevTrackUID()
+    {
+        int i = _trackHistoryCurrentIndex + 1;
+        if (i >= _trackHistory.size())
+            return -1;
+        return _trackHistory.get(i);
+    }
+
+    // Modify Playlist and History
+
+    private int MoveToNextPlaylistTrack() // {TODO} THIS NEEDS TO CHOP OFF THE END OF THE HISTORY BEFORE PUSH
+    {
+        int uid = PlaylistNextTrackUID();
+        if (uid >=0)
         {
-            _currentTrackIndex = index;
+            int cur = _trackPlaylistCurrentIndex;
+            _trackPlaylistCurrentIndex += 1;
+            if (cur >= 0)
+            {
+                _trackHistory.push(uid);
+                _trackHistoryCurrentIndex = 0;
+            }
+        }
+        return uid;
+    }
+
+    private int MoveToPrevPlaylistTrack()
+    {
+        int uid = PlaylistPrevTrackUID();
+        if (uid >=0)
+        {
+            int cur = _trackPlaylistCurrentIndex;
+            _trackPlaylistCurrentIndex -= 1;
+            _trackHistory.push(uid);
+            _trackHistoryCurrentIndex = 0;
+        }
+        return uid;
+    }
+
+    private int MoveToIndexedPlaylistTrack(int index)
+    {
+        if (index>=0 && index<_trackPlaylist.size())
+        {
+            int uid = _trackPlaylist.get(index);
+            if (uid >= 0)
+            {
+                int cur = _trackPlaylistCurrentIndex;
+                _trackPlaylistCurrentIndex -= index;
+                _trackHistory.push(uid);
+                _trackHistoryCurrentIndex = 0;
+            }
+            return uid;
+        }
+        return -1;
+    }
+
+    private int MoveBackInHistory()
+    {
+        int uid = HistoryPrevTrackUID();
+        if (uid >=0)
+        {
+            _trackHistoryCurrentIndex += 1;
+            int playlistIndex = _trackPlaylist.indexOf(uid); // -1 if not found
+            if (playlistIndex >= 0)
+                _trackPlaylistCurrentIndex = playlistIndex;
+        }
+        return uid;
+    }
+
+    private int MoveForwardInHistory()
+    {
+        int uid = HistoryNextTrackUID();
+        if (uid >=0)
+        {
+            _trackHistoryCurrentIndex -= 1;
+            int playlistIndex = _trackPlaylist.indexOf(uid); // -1 if not found
+            if (playlistIndex >= 0)
+                _trackPlaylistCurrentIndex = playlistIndex;
+            return uid;
+        }
+        else
+        {
+            return MoveToNextPlaylistTrack();
+        }
+    }
+
+    private void ClearHistory()
+    {
+        // neccesary when people want to set the playlist and not let it be possible
+        // to go back in history to tracks not in the playlist.
+        _trackHistory.clear();
+        _trackHistoryCurrentIndex = -1;
+
+        // We no longer need any tracks that arent in the playlist as there is no way
+        // to navigate to them
+        ArrayList<Track> keep = new ArrayList<>();
+
+        for (int uid: _trackPlaylist)
+            keep.add(_tracks.get(uid));
+
+        _tracks.clear();
+
+        for (Track track: keep)
+            _tracks.put(track.UID, track);
+    }
+
+    private void SetPlaylist(Track[] tracks)
+    {
+        _trackPlaylist.clear();
+
+        ArrayList<Integer> uids = new ArrayList<>();
+
+        for (Track track : tracks)
+        {
+            _tracks.put(track.UID, track);
+            _trackPlaylist.add(track.UID);
+        }
+
+        _trackPlaylistCurrentIndex = _trackPlaylist.indexOf(_currentTrackUID);
+    }
+
+
+    //-------------------------
+    // Control of the current Track
+
+    private void MakeTrackCurrentByUID(int uid)
+    {
+        // This is the only way to request a change in CurrentTrack.
+        // Moving in the playlist and history is just changing the focus
+        // of those things.
+
+        if (_prepared)
+        {
+            _prepared = false;
+            _player.stop();
+            _player.reset();
+        }
+
+        int originalUID = _currentTrackUID;
+        if (uid >= 0)
+        {
+            // Calling with -1 is valid as this is a command to focus no track TODO really?
+            try
+            {
+                _player.reset();
+                _state = AndroidPlayerState.Initialized;
+
+                Track track = _tracks.get(uid);
+                if (track == null) throw new AssertionError();
+
+                _player.setDataSource(track.Url);
+
+                setPlaybackState(PlaybackStateCompat.STATE_BUFFERING, 0);
+                _prepared = false;
+
+                _currentTrackUID = uid;
+
+                _player.prepareAsync();
+            }
+            catch (Exception e)
+            {
+                Logger.Log("Exception while setting MediaPlayer DataSource");
+            }
+        } else {
+            _currentTrackUID = -1;
+        }
+
+        if (_currentTrackUID != originalUID && _session!=null)
+        {
+            // {TODO} announce track
+            _trackPlaylistCurrentIndex = _trackPlaylist.indexOf(_currentTrackUID);
+            Track track = _tracks.get(uid);
             Bundle extras = new Bundle();
-            extras.putInt("index", index);
-
-            if (index == -1)
-                extras.putDouble("duration", 0);
-            else
-                extras.putDouble("duration", _playlist.get(index).Duration);
-
+            extras.putParcelable("track", track);
             _session.sendSessionEvent("trackChanged", extras);
         }
     }
+
+    @Override
+    public void onPrepared(MediaPlayer mp)
+    {
+        _prepared = true;
+        setPlaybackState(PlaybackStateCompat.STATE_BUFFERING, 0);
+        _player.setLooping(false);
+        _player.start();
+        setPlaybackState(PlaybackStateCompat.STATE_PLAYING, 0);
+    }
+
+    private Track GetCurrentTrack()
+    {
+        return _tracks.get(_currentTrackUID);
+    }
+
+    //---------------------------
+
 
     public void setAudioClient(StreamingAudioClient bgp)
     {
@@ -134,7 +342,6 @@ public final class StreamingAudioService
             public void onSkipToNext()
             {
                 super.onSkipToNext();
-                Logger.Log("Skipping from media notification: " + GetCurrentTrack().Name);
                 Next();
             }
 
@@ -150,10 +357,6 @@ public final class StreamingAudioService
             {
                 super.onStop();
                 Stop();
-                NotificationManager notificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
-                notificationManager.cancel(1);
-                Intent intent = new Intent(getApplicationContext(), StreamingAudioService.class);
-                stopService(intent);
             }
 
             @Override
@@ -199,6 +402,12 @@ public final class StreamingAudioService
         setPlaybackState(newState, _player.getCurrentPosition());
     }
 
+    private void KillNotificationPlayer()
+    {
+        NotificationManager notificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.cancel(1);
+    }
+
     private void setPlaybackState(int newState, int position) // PlaybackStateCompat.STATE_YYY
     {
         // Vars we can mutate for result
@@ -218,7 +427,7 @@ public final class StreamingAudioService
                 unoState = AndroidPlayerState.Idle;
                 notifKeycode = KeyEvent.KEYCODE_MEDIA_PLAY;
                 notifIcon = android.R.drawable.ic_media_play;
-                notifText = "Play";
+                notifText = "MakeTrackCurrentByUID";
                 break;
             }
             case PlaybackStateCompat.STATE_PAUSED:
@@ -226,7 +435,7 @@ public final class StreamingAudioService
                 unoState = AndroidPlayerState.Paused;
                 notifKeycode = KeyEvent.KEYCODE_MEDIA_PLAY;
                 notifIcon = android.R.drawable.ic_media_play;
-                notifText = "Play";
+                notifText = "MakeTrackCurrentByUID";
                 break;
             }
             case PlaybackStateCompat.STATE_BUFFERING:
@@ -262,8 +471,14 @@ public final class StreamingAudioService
         // and the notification if needed
         if (notifKeycode != -1)
         {
-            UpdateMetadata();
-            ArtworkMediaNotification.Notify(GetCurrentTrack(), _session, this, notifIcon, notifText, notifKeycode);
+            Track track = GetCurrentTrack();
+            if (track!=null)
+            {
+                UpdateMetadata();
+                ArtworkMediaNotification.Notify(track, _session, this, notifIcon, notifText, notifKeycode);
+            } else {
+                KillNotificationPlayer();
+            }
         }
 
         // and uno
@@ -310,32 +525,6 @@ public final class StreamingAudioService
     // Actions
     //
 
-    private void Play(int index)
-    {
-        if (_prepared)
-        {
-            _prepared = false;
-            _player.stop();
-            _player.reset();
-        }
-        try
-        {
-            _player.reset();
-            _state = AndroidPlayerState.Initialized;
-            Logger.Log("SetDataSource: state: " + _state);
-            Track track = _playlist.get(index);
-            _player.setDataSource(track.Url);
-            setPlaybackState(PlaybackStateCompat.STATE_BUFFERING, 0);
-            _player.prepareAsync();
-        }
-        catch (Exception e)
-        {
-            Logger.Log("Exception while setting MediaPlayer DataSource");
-        }
-
-        SetCurrentTrackIndex(index);
-    }
-
     private void Resume()
     {
         if (_prepared)
@@ -353,7 +542,6 @@ public final class StreamingAudioService
                     setPlaybackState(PlaybackStateCompat.STATE_PLAYING, _player.getCurrentPosition());
                 }
             }
-
         }
     }
 
@@ -365,31 +553,14 @@ public final class StreamingAudioService
         }
     }
 
-    private void SetPlaylist(Track[] tracks)
-    {
-        _playlist.clear();
-        Collections.addAll(_playlist, tracks);
-    }
-
-    private void AddTrack(Track track)
-    {
-        _playlist.add(track);
-    }
-
     private void Next()
     {
-        if (HasNext())
-        {
-            Play(CurrentTrackIndex() + 1);
-        }
+        MakeTrackCurrentByUID(MoveToNextPlaylistTrack());
     }
 
     private void Previous()
     {
-        if (HasPrevious())
-        {
-            Play(CurrentTrackIndex() - 1);
-        }
+        MakeTrackCurrentByUID(MoveToPrevPlaylistTrack());
     }
 
     private void Pause()
@@ -408,55 +579,16 @@ public final class StreamingAudioService
         _player.reset();
         _audioManager.abandonAudioFocus(this);
         setPlaybackState(PlaybackStateCompat.STATE_STOPPED, 0);
-    }
-
-    private boolean HasNext()
-    {
-        int currentIndex = CurrentTrackIndex();
-        int playlistSize = _playlist.size();
-        return currentIndex > -1 && currentIndex < playlistSize - 1;
-    }
-
-    private boolean HasPrevious()
-    {
-        int currentIndex = CurrentTrackIndex();
-        return currentIndex > 0;
-    }
-
-    //
-    // Public Functions
-    //
-    // These will need to be removed. See the note in the StreamingAudioClient class for why
-    // these exist.
-    //
-
-    public synchronized int CurrentTrackIndex()
-    {
-        return _playlist.indexOf(GetCurrentTrack());
-    }
-
-    public synchronized double GetCurrentTrackDuration()
-    {
-        if (_prepared)
-        {
-            return _player.getDuration();
-        }
-        return 0.0;
+        //
+        KillNotificationPlayer();
+        // {TODO} why stop the service?
+        Intent intent = new Intent(getApplicationContext(), StreamingAudioService.class);
+        stopService(intent);
     }
 
     //
     // Events
     //
-
-    @Override
-    public void onPrepared(MediaPlayer mp)
-    {
-        _prepared = true;
-        setPlaybackState(PlaybackStateCompat.STATE_BUFFERING, 0);
-        _player.setLooping(false);
-        _player.start();
-        setPlaybackState(PlaybackStateCompat.STATE_PLAYING, 0);
-    }
 
     @Override
     public void onCompletion(MediaPlayer mp)
@@ -549,9 +681,9 @@ public final class StreamingAudioService
     {
         private MediaControllerCompat _controller;
         private PlaybackStateCompat _lastPlayerState;
-        private double _duration = -1;
+        private Track _currentTrack = null;
 
-        public abstract void OnCurrentTrackChanged(int index);
+        public abstract void OnCurrentTrackChanged(Track track);
         public abstract void OnInternalStatusChanged(int i);
 
         public StreamingAudioClient(StreamingAudioService service) throws RemoteException
@@ -626,14 +758,14 @@ public final class StreamingAudioService
 
             if (event.equals("trackChanged"))
             {
-                _duration = extras.getDouble("duration");
-                OnCurrentTrackChanged(extras.getInt("index"));
+                _currentTrack = (Track)extras.getParcelable("track");
+                OnCurrentTrackChanged(_currentTrack);
             }
         }
 
         public final double GetCurrentTrackDuration()
         {
-            return _duration;
+            return _currentTrack.Duration;
         }
     }
 }

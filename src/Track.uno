@@ -10,14 +10,18 @@ namespace StreamingPlayer
 
     public class Track
     {
+        static int _lastUID = 0;
+
+        public readonly int UID;
         public readonly string Name;
         public readonly string Artist;
         public readonly string Url;
         public readonly string ArtworkUrl;
         public readonly double Duration;
 
-        public Track(string name, string artist, string url, string artworkUrl, double duration)
+        public Track(int uid, string name, string artist, string url, string artworkUrl, double duration)
         {
+            UID = uid;
             Name = name;
             Artist = artist;
             Url = url;
@@ -28,19 +32,17 @@ namespace StreamingPlayer
         public override bool Equals(object obj)
         {
             var t = obj as Track;
-            if (t != null)
-            {
-                if (t.Name == Name
+            return (t != null
+                    && t.UID == UID
+                    && t.Name == Name
                     && t.Artist == Artist
-                    && t.Url == Url)
-                    return true;
-            }
-            return false;
+                    && t.Url == Url);
         }
 
         public override string ToString()
         {
             return "Track:" +
+                ": UID: " + UID +
                 ": Name: " + Name +
                 ", Artist: " + Artist +
                 ", Url: " + Url +
@@ -53,6 +55,7 @@ namespace StreamingPlayer
             if (t == null)
                 return null;
             var obj = c.NewObject();
+            obj["uid"] = t.UID;
             obj["name"] = t.Name;
             obj["artist"] = t.Artist;
             obj["url"] = t.Url;
@@ -60,48 +63,11 @@ namespace StreamingPlayer
             obj["duration"] = t.Duration;
             return obj;
         }
-    }
 
-    [ForeignInclude(Language.Java,
-                    "com.fuse.StreamingPlayer.StreamingAudioService",
-                    "com.fuse.StreamingPlayer.ArtworkMediaNotification",
-                    "com.fuse.StreamingPlayer.Track")]
-    extern(Android) static class TrackAndroidImpl
-    {
-        [Foreign(Language.Java)]
-        public static string GetName(Java.Object t)
-        @{
-            Track track = (Track)t;
-            return track.Name;
-        @}
-
-        [Foreign(Language.Java)]
-        public static string GetArtist(Java.Object t)
-        @{
-            Track track = (Track)t;
-            return track.Artist;
-        @}
-
-        [Foreign(Language.Java)]
-        public static string GetUrl(Java.Object t)
-        @{
-            Track track = (Track)t;
-            return track.Url;
-        @}
-
-        [Foreign(Language.Java)]
-        public static string GetArtworkUrl(Java.Object t)
-        @{
-            Track track = (Track)t;
-            return track.ArtworkUrl;
-        @}
-
-        [Foreign(Language.Java)]
-        public static double GetDuration(Java.Object t)
-        @{
-            Track track = (Track)t;
-            return track.Duration;
-        @}
+        internal static int NewUID()
+        {
+            return _lastUID+=1;
+        }
     }
 
     class TrackConverter : Marshal.IConverter
@@ -115,13 +81,15 @@ namespace StreamingPlayer
         {
             if (CanConvert(t))
             {
+                debug_log("MUST FIX TRYCONVERT");
                 var jsObject = (Fuse.Scripting.Object)o;
+                var uid = Track.NewUID(); //Marshal.ToInt(jsObject["uid"]);
                 var name = jsObject["name"].ToString();
                 var artist = jsObject["artist"].ToString();
                 var url = jsObject["url"].ToString();
                 var artworkUrl = jsObject["artworkUrl"].ToString();
                 var duration = Marshal.ToDouble(jsObject["duration"]);
-                return new Track(name, artist, url, artworkUrl, duration);
+                return new Track(uid, name, artist, url, artworkUrl, duration);
             }
             return null;
         }

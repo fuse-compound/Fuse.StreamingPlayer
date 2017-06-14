@@ -16,8 +16,7 @@ namespace StreamingPlayer
         static bool _playerInitialized;
 
         static int _playlistLength = 0;
-        static int _currentTrackIndex = -1;
-        static int GetCurrentTrackIndex() { return _currentTrackIndex; }
+        static Track _currentTrack = null;
 
         public StreamingPlayerModule(): base(true, "statusChanged", "currentTrackChanged")
         {
@@ -46,9 +45,7 @@ namespace StreamingPlayer
             AddMember(new NativeProperty<double,double>("duration", GetDuration));
             AddMember(new NativeProperty<double,double>("progress", GetProgress));
 
-            AddMember(new NativeProperty<int,int>("currentTrack", GetCurrentTrackIndex));
-            AddMember(new NativeProperty<bool, bool>("hasNext", GetHasNext, null, null));
-            AddMember(new NativeProperty<bool, bool>("hasPrevious", GetHasPrevious, null, null));
+            AddMember(new NativeProperty<Track,Fuse.Scripting.Object>("currentTrack", GetCurrentTrack, null, Track.ToJSObject));
 
             var statusChanged = new NativeEvent("statusChanged");
             On("statusChanged", statusChanged);
@@ -71,15 +68,17 @@ namespace StreamingPlayer
             }
         }
 
+        static Track GetCurrentTrack() { return _currentTrack; }
+
+        void OnCurrentTrackChanged(Track track)
+        {
+            _currentTrack = track;
+            Emit("currentTrackChanged");
+        }
+
         void OnStatusChanged(PlayerStatus status)
         {
             Emit("statusChanged", status.Stringify());
-        }
-
-        void OnCurrentTrackChanged(int index)
-        {
-            _currentTrackIndex = index;
-            Emit("statusChanged");
         }
 
         public object Next(Context c, object[] args)
@@ -172,22 +171,6 @@ namespace StreamingPlayer
             if (!_playerInitialized) return null;
             StreamingPlayer.Stop();
             return null;
-        }
-
-        //
-        // GetHasNext & GetHasPrevious are really just convenience functions. They dont communicate
-        // with the play, they just rely on what can be currently know of the player state
-        //
-        bool GetHasNext()
-        {
-            if (!_playerInitialized) return false;
-            return _currentTrackIndex + 1 < _playlistLength;
-        }
-
-        bool GetHasPrevious()
-        {
-            if (!_playerInitialized) return false;
-            return _currentTrackIndex - 1 >= 0;
         }
     }
 }

@@ -35,3 +35,17 @@ History
 Playlist
 
 repeat/repeat-1/normal
+
+## Android
+
+- stop on no track crashes
+-
+
+Huh we actually have some issues:
+
+- Previous requires history, not just playlist.
+ - History requires the track objects
+ - current may no longer be in the playlist
+ - so getCurrent can't be an index
+
+`slime-inhibit-pipelining`, try changing it's value to nil. This should mean #'slime-background-activities-enabled-p returns true and then it will dispatch #'slime-echo-arglist asynchronously

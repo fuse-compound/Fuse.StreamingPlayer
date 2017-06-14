@@ -18,7 +18,7 @@ namespace StreamingPlayer
         static public bool HasNext = false;
 
         static public event StatusChangedHandler StatusChanged;
-        static public event Action<int> CurrentTrackChanged;
+        static public event Action<Track> CurrentTrackChanged;
 
         static public bool Init() { return true; }
         static public void SetPlaylist(Track[] tracks) {}

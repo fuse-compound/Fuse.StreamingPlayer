@@ -33,7 +33,6 @@ namespace StreamingPlayer
         static bool _initialized;
         static bool _permittedToPlay = false;
         static PlayerStatus _status = PlayerStatus.Stopped;
-        static int _currentTrackIndex = -1;
         static Track[] _pendingPlaylist;
         static bool _pendingPlay = false;
 
@@ -134,9 +133,9 @@ namespace StreamingPlayer
                     {
                         client = new StreamingAudioService.StreamingAudioClient(ourService)
                         {
-                            @Override public void OnCurrentTrackChanged(int index)
+                            @Override public void OnCurrentTrackChanged(Track track)
                             {
-                                @{StreamingPlayer.OnCurrentTrackChanged(int):Call(index)};
+                                @{StreamingPlayer.OnCurrentTrackChanged(Track):Call(@{Track(int, string, string, string, string, double):New(track.UID, track.Name, track.Artist, track.Url, track.ArtworkUrl, track.Duration)})};
                             }
                             @Override public void OnInternalStatusChanged(int i)
                             {
@@ -169,7 +168,7 @@ namespace StreamingPlayer
         //------------------------------------------------------------
         // Events
 
-        static public event Action<int> CurrentTrackChanged;
+        static public event Action<Track> CurrentTrackChanged;
         static public event StatusChangedHandler StatusChanged;
 
         static void OnStatusChanged()
@@ -179,12 +178,10 @@ namespace StreamingPlayer
                 StatusChanged(Status);
         }
 
-        static void OnCurrentTrackChanged(int index)
+        static void OnCurrentTrackChanged(Track track)
         {
             debug_log("Current track changed");
-            _currentTrackIndex = index;
-            if (CurrentTrackChanged != null)
-                CurrentTrackChanged(index);
+            CurrentTrackChanged(track);
         }
 
         static void InternalStatusChanged(int i)
@@ -221,12 +218,6 @@ namespace StreamingPlayer
             }
         }
 
-        [Foreign(Language.Java)]
-        static Java.Object ToJavaTrack(string name, string artist, string url, string artworkUrl, double duration)
-        @{
-            return new Track(name, artist, url, artworkUrl, duration);
-        @}
-
         static public void Play()
         {
             if (_service == null)
@@ -246,6 +237,7 @@ namespace StreamingPlayer
         static void PlayImpl(Java.Object client)
         @{
             StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
+            debug_log("PlayImpl:"+sClient);
             sClient.Play();
         @}
 
@@ -340,61 +332,57 @@ namespace StreamingPlayer
             sClient.Stop();
         @}
 
-
-
         //int id, string name, string url, string artworkUrl, double duration
         static public void SetPlaylist(Track[] tracks)
         {
-            if (_service == null)
-                CreateService();
-
-            if (IsConnected)
+            debug_log("set tracks:" + tracks);
+            if (tracks!=null)
             {
-                string[] names = new string[tracks.Length];
-                string[] artists = new string[tracks.Length];
-                string[] urls = new string[tracks.Length];
-                string[] artworkUrls = new string[tracks.Length];
-                double[] durations = new double[tracks.Length];
+                if (_service == null)
+                    CreateService();
 
-                for (int i = 0; i < tracks.Length; i++) {
-                    var t = tracks[i];
-                    names[i] = t.Name;
-                    artists[i] = t.Artist;
-                    urls[i] = t.Url;
-                    artworkUrls[i] = t.ArtworkUrl;
-                    durations[i] = t.Duration;
+                if (IsConnected)
+                {
+                    debug_log("Android: set current playlist");
+                    SetPlaylistImpl(_client, tracks, tracks.Length);
+                } else {
+                    debug_log("Android: caching as _pendingPlaylist");
+                    _pendingPlaylist = tracks;
                 }
-                debug_log("Android: set current playlist");
-                SetPlaylistImpl(_client, names, artists, urls, artworkUrls, durations);
-            } else {
-                debug_log("Android: caching as _pendingPlaylist");
-                _pendingPlaylist = tracks;
             }
         }
 
         [Foreign(Language.Java)]
-        static void SetPlaylistImpl(Java.Object client,
-                             string[] names,
-                             string[] artists,
-                             string[] urls,
-                             string[] artworkUrls,
-                             double[] durations)
+        static void SetPlaylistImpl(Java.Object client, object unoTracks, int len)
         @{
-            String[] n = names.copyArray();
-            String[] art = artists.copyArray();
-            String[] u = urls.copyArray();
-            String[] a = artworkUrls.copyArray();
-            double[] d = durations.copyArray();
-
-            Track[] tracks = new Track[n.length];
-
-            for (int j = 0; j < n.length; j++) {
-                Track t = new Track(n[j], art[j], u[j], a[j], d[j]);
-                tracks[j] = t;
-            }
-
             StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
-            sClient.SetPlaylist(tracks);
+            debug_log("well bugger:"+client+","+unoTracks+","+len);
+            java.util.ArrayList<Track> tracks = new java.util.ArrayList<Track>();
+            for (int i =0; i<len; i++)
+                tracks.add((Track)@{NthToJavaTrack(object,int):Call(unoTracks, i)});
+
+            debug_log("Made it to here");
+            sClient.SetPlaylist(tracks.toArray(new Track[tracks.size()]));
+        @}
+
+        static Java.Object NthToJavaTrack(object boxedArr, int n)
+        {
+            debug_log("fuck:"+boxedArr);
+            var arr = (Track[])boxedArr;
+            var track = arr[n];
+            debug_log("Track:"+track+","+arr+","+n);
+            return ToJavaTrack(track);
+        }
+
+        static Java.Object ToJavaTrack(Track track)
+        {
+            return ToJavaTrack(track.UID, track.Name, track.Artist, track.Url, track.ArtworkUrl, track.Duration);
+        }
+
+        [Foreign(Language.Java)]
+        static Java.Object ToJavaTrack(int uid, string name, string artist, string url, string artworkUrl, double duration)
+        @{
+            return new Track(uid, name, artist, url, artworkUrl, duration);
         @}
 
         static public void Next()
