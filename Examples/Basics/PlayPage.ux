@@ -16,7 +16,9 @@
                     Padding="20">
             <TextButton Value="Prev" Clicked="{prevClicked}" />
             <TextButton Value="Stop" Clicked="{backClicked}" />
+            <TextButton Value="Play" Clicked="{playClicked}" />
             <TextButton Value="Next" Clicked="{nextClicked}" />
         </StackPanel>
+        <BottomBarBackground Dock="Bottom" />
     </DockPanel>
 </Page>

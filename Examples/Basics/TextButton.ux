@@ -1,4 +1,4 @@
-<Text ux:Class="TextButton" Value="Next" Clicked="{nextClicked}" >
+<Text ux:Class="TextButton" Value="Next" >
     <Pressed>
         <Scale Factor="1.2" Duration="0.1" />
     </Pressed>

@@ -5,7 +5,7 @@ var StreamingPlayer = require("FuseJS/StreamingPlayer");
 var tracks = Observable();
 
 var paramObs = this.Parameter.onValueChanged(module, function(param) {
-    MediaQuery.tracks({ "artist": param["artistID"] }).then(function(tracksArray) {
+	MediaQuery.tracks({ "artist": param["artistID"] }).then(function(tracksArray) {
 		var tmp = tracksArray.map(function(track, index) {
 			return {
 				"id": index,
@@ -16,32 +16,39 @@ var paramObs = this.Parameter.onValueChanged(module, function(param) {
 				"duration": track["duration"]
 			};
 		});
-        tracks.addAll(tmp);
+		tracks.addAll(tmp);
 		StreamingPlayer.setPlaylist(tmp);
-		// StreamingPlayer.resume();
-		// StreamingPlayer.play(tmp[0]);
-    }).catch(function(e) {
-        console.log("Well damn:" + e);
-    });
+		StreamingPlayer.play();
+	}).catch(function(e) {
+		console.log("Well damn:" + e);
+	});
 });
 
 var backClicked = function() {
-    // stop stuff
+	console.log("JS BACK CLICKED");
 	StreamingPlayer.stop();
-    router.goto("artists");
+	router.goto("artists");
 };
 
 var prevClicked = function() {
-    StreamingPlayer.previous();
+	console.log("JS PREV CLICKED");
+	StreamingPlayer.previous();
 };
 
 var nextClicked = function() {
+	console.log("JS NEXT CLICKED");
 	StreamingPlayer.next();
 };
 
+var playClicked = function() {
+	console.log("JS PLAY CLICKED");
+	StreamingPlayer.play();
+};
+
 module.exports = {
-    backClicked: backClicked,
+	backClicked: backClicked,
 	prevClicked: prevClicked,
 	nextClicked: nextClicked,
-    tracks: tracks
+	playClicked: playClicked,
+	tracks: tracks
 };
