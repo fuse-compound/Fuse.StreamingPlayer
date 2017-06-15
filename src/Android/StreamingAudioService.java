@@ -378,6 +378,14 @@ public final class StreamingAudioService
                 {
                     SetPlaylist((Track[])extras.getParcelableArray("tracks"));
                 }
+                else if (action.equals("Forward"))
+                {
+                    Forward();
+                }
+                else if (action.equals("Backward"))
+                {
+                    Backward();
+                }
             }
         });
 
@@ -563,6 +571,16 @@ public final class StreamingAudioService
         MakeTrackCurrentByUID(MoveToPrevPlaylistTrack());
     }
 
+    private void Forward()
+    {
+        MakeTrackCurrentByUID(MoveForwardInHistory());
+    }
+
+    private void Backward()
+    {
+        MakeTrackCurrentByUID(MoveBackInHistory());
+    }
+
     private void Pause()
     {
         if (_state == AndroidPlayerState.Started)
@@ -720,6 +738,16 @@ public final class StreamingAudioService
         public final void Previous()
         {
             _controller.getTransportControls().skipToPrevious();
+        }
+
+        public final void Forward()
+        {
+            _controller.getTransportControls().sendCustomAction("Forward", new Bundle());
+        }
+
+        public final void Backward()
+        {
+            _controller.getTransportControls().sendCustomAction("Backward", new Bundle());
         }
 
         public final void Seek(long position)

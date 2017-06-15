@@ -32,6 +32,8 @@ namespace StreamingPlayer
             Resource.SetGlobalKey(_instance, "FuseJS/StreamingPlayer");
             AddMember(new NativeFunction("next", (NativeCallback)Next));
             AddMember(new NativeFunction("previous", (NativeCallback)Previous));
+            AddMember(new NativeFunction("backward", (NativeCallback)Backward));
+            AddMember(new NativeFunction("forward", (NativeCallback)Forward));
             AddMember(new NativeFunction("setPlaylist", (NativeCallback)SetPlaylist));
             AddMember(new NativeFunction("play", (NativeCallback)Play));
             AddMember(new NativeFunction("pause", (NativeCallback)Pause));
@@ -93,6 +95,20 @@ namespace StreamingPlayer
         {
             if (!_playerInitialized) return null;
             StreamingPlayer.Previous();
+            return null;
+        }
+
+        public object Forward(Context c, object[] args)
+        {
+            if (!_playerInitialized) return null;
+            StreamingPlayer.Forward();
+            return null;
+        }
+
+        public object Backward(Context c, object[] args)
+        {
+            if (!_playerInitialized) return null;
+            StreamingPlayer.Backward();
             return null;
         }
 

@@ -397,6 +397,18 @@ namespace StreamingPlayer
                 PreviousImpl(_client);
         }
 
+        static public void Forward()
+        {
+            if (IsConnected)
+                NextImpl(_client);
+        }
+
+        static public void Backward()
+        {
+            if (IsConnected)
+                PreviousImpl(_client);
+        }
+
         [Foreign(Language.Java)]
         static void NextImpl(Java.Object client)
         @{
@@ -409,6 +421,20 @@ namespace StreamingPlayer
         @{
             StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
             sClient.Previous();
+        @}
+
+        [Foreign(Language.Java)]
+        static void NextImpl(Java.Object client)
+        @{
+            StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
+            sClient.Backward();
+        @}
+
+        [Foreign(Language.Java)]
+        static void PreviousImpl(Java.Object client)
+        @{
+            StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
+            sClient.Forward();
         @}
     }
 }

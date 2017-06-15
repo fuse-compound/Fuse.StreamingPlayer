@@ -25,30 +25,18 @@ var paramObs = this.Parameter.onValueChanged(module, function(param) {
 });
 
 var backClicked = function() {
-	console.log("JS BACK CLICKED");
 	StreamingPlayer.stop();
 	router.goto("artists");
 };
 
-var prevClicked = function() {
-	console.log("JS PREV CLICKED");
-	StreamingPlayer.previous();
-};
-
-var nextClicked = function() {
-	console.log("JS NEXT CLICKED");
-	StreamingPlayer.next();
-};
-
-var playClicked = function() {
-	console.log("JS PLAY CLICKED");
-	StreamingPlayer.play();
-};
-
 module.exports = {
+	prevClicked: StreamingPlayer.previous,
+	nextClicked: StreamingPlayer.next,
+	backwardClicked: StreamingPlayer.backward,
+	forwardClicked: StreamingPlayer.forward,
+
 	backClicked: backClicked,
-	prevClicked: prevClicked,
-	nextClicked: nextClicked,
-	playClicked: playClicked,
+	playClicked: StreamingPlayer.play,
+
 	tracks: tracks
 };

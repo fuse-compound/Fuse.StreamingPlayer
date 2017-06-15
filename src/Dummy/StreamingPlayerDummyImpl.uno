@@ -27,7 +27,9 @@ namespace StreamingPlayer
         static public void Pause() {}
         static public void Stop() {}
         static public void Seek(double toProgress) {}
-        static public void Previous() { return 0; }
-        static public void Next() { return 0; }
+        static public void Previous() {}
+        static public void Next() {}
+        static public void Backward() {}
+        static public void Forward() {}
     }
 }

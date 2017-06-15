@@ -522,12 +522,22 @@ namespace StreamingPlayer
             MakeTrackCurrentByUID(MoveToPrevPlaylistTrack());
         }
 
+        public static void Forward()
+        {
+            MakeTrackCurrentByUID(MoveForwardInHistory());
+        }
+
+        public static void Backward()
+        {
+            MakeTrackCurrentByUID(MoveBackInHistory());
+        }
+
         static void OnHasNextOrHasPreviousChanged()
         {
             if (HasNextChanged != null)
             {
                 var hasNext = PlaylistNextTrackUID() > -1;
-                HasNextChanged(HasNext);
+                HasNextChanged(hasNext);
             }
             if (HasPreviousChanged != null)
             {
