@@ -35,7 +35,6 @@ namespace StreamingPlayer
                 HidePreviousButton();
         }
 
-
         static void OnHasNextChanged(bool has)
         {
             if (has)
@@ -52,7 +51,6 @@ namespace StreamingPlayer
         {
             StreamingPlayer.Previous();
         }
-
 
         static void Play()
         {
@@ -109,48 +107,44 @@ namespace StreamingPlayer
 
             NSError *setCategoryError = nil;
             BOOL success = [audioSession setCategory:AVAudioSessionCategoryPlayback error:&setCategoryError];
-            if (!success) { NSLog(@"Error setting category"); }
 
             NSError *activationError = nil;
             success = [audioSession setActive:YES error:&activationError];
-            if (!success) { NSLog(@"Error setting active audio session"); }
 
 
             MPRemoteCommandCenter *commandCenter = [MPRemoteCommandCenter sharedCommandCenter];
+            NSOperatingSystemVersion ios9_0_0 = (NSOperatingSystemVersion){9, 0, 0};
+
             [commandCenter.playCommand addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent *event) {
-                NSLog(@"Play button pressed");
                 play();
                 return MPRemoteCommandHandlerStatusSuccess;
             }];
+
             [commandCenter.pauseCommand addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent *event) {
-                NSLog(@"Pause button pressed");
                 pause();
                 return MPRemoteCommandHandlerStatusSuccess;
             }];
+
             [commandCenter.nextTrackCommand addTargetWithHandler:^(MPRemoteCommandEvent *event) {
                 // Begin playing the current track.
-                NSLog(@"Remote control: next track command");
                 next();
                 return MPRemoteCommandHandlerStatusSuccess;
             }];
+
             [commandCenter.previousTrackCommand addTargetWithHandler:^(MPRemoteCommandEvent *event) {
-                // Begin playing the current track.
-                NSLog(@"Remote control: previous track command");
                 previous();
                 return MPRemoteCommandHandlerStatusSuccess;
             }];
 
-            //NSLog(@"current API iOS Version: %f", NSFoundationVersionNumber);
-            //NSLog(@"required API iOS Version: %f", NSFoundationVersionNumber_iOS_9_0);
-            NSOperatingSystemVersion ios9_0_0 = (NSOperatingSystemVersion){9, 0, 0};
-            if ([[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:ios9_0_0]) {
+            if ([[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:ios9_0_0])
+            {
+                [commandCenter.changePlaybackPositionCommand setEnabled:true];
                 [commandCenter.changePlaybackPositionCommand addTargetWithHandler:^(MPRemoteCommandEvent *event) {
-                        MPChangePlaybackPositionCommandEvent* seekEvent = (MPChangePlaybackPositionCommandEvent*)event;
-                        NSTimeInterval posTime = seekEvent.positionTime;
-                        //NSLog(@"Remote control: seek to pos command: %f", posTime);
-                        seek(posTime);
-                        return MPRemoteCommandHandlerStatusSuccess;
-                    }];
+                    MPChangePlaybackPositionCommandEvent* seekEvent = (MPChangePlaybackPositionCommandEvent*)event;
+                    NSTimeInterval posTime = seekEvent.positionTime;
+                    seek(posTime);
+                    return MPRemoteCommandHandlerStatusSuccess;
+                }];
             }
         @}
     }
