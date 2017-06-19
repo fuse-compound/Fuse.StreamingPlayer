@@ -12,14 +12,21 @@
                 </Each>
             </StackPanel>
         </ScrollView>
-        <StackPanel Orientation="Horizontal" Dock="Bottom" ItemSpacing="40" ContentAlignment="Center"
-                    Padding="20">
-            <TextButton Value="Backward" Clicked="{backwardClicked}" />
-            <TextButton Value="Prev" Clicked="{prevClicked}" />
-            <TextButton Value="Stop" Clicked="{backClicked}" />
-            <TextButton Value="Play" Clicked="{playClicked}" />
-            <TextButton Value="Next" Clicked="{nextClicked}" />
-            <TextButton Value="Forward" Clicked="{forwardClicked}" />
+        <StackPanel Orientation="Vertical" Dock="Bottom">
+            <SeekBar Height="50">
+                <DockPanel Dock="Bottom">
+                    <Text Value="{progress}" Color="Black"/>
+                    <Text Value="{duration}" Dock="Right" Color="Black" Opacity="0.6"/>
+                </DockPanel>
+            </SeekBar>
+            <StackPanel Orientation="Horizontal" ItemSpacing="40" ContentAlignment="Center" Padding="20">
+                <TextButton Value="Backward" Clicked="{backwardClicked}" />
+                <TextButton Value="Prev" Clicked="{prevClicked}" />
+                <TextButton Value="Stop" Clicked="{backClicked}" />
+                <TextButton Value="Play" Clicked="{playClicked}" />
+                <TextButton Value="Next" Clicked="{nextClicked}" />
+                <TextButton Value="Forward" Clicked="{forwardClicked}" />
+            </StackPanel>
         </StackPanel>
         <BottomBarBackground Dock="Bottom" />
     </DockPanel>

@@ -113,7 +113,7 @@ namespace StreamingPlayer
 
 
             MPRemoteCommandCenter *commandCenter = [MPRemoteCommandCenter sharedCommandCenter];
-            NSOperatingSystemVersion ios9_0_0 = (NSOperatingSystemVersion){9, 0, 0};
+            NSOperatingSystemVersion ios9_0_1 = (NSOperatingSystemVersion){9, 0, 1};
 
             [commandCenter.playCommand addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent *event) {
                 play();
@@ -136,7 +136,7 @@ namespace StreamingPlayer
                 return MPRemoteCommandHandlerStatusSuccess;
             }];
 
-            if ([[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:ios9_0_0])
+            if ([[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:ios9_0_1])
             {
                 [commandCenter.changePlaybackPositionCommand setEnabled:true];
                 [commandCenter.changePlaybackPositionCommand addTargetWithHandler:^(MPRemoteCommandEvent *event) {

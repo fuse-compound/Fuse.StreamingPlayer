@@ -602,6 +602,8 @@ public final class StreamingAudioService
         // {TODO} why stop the service?
         Intent intent = new Intent(getApplicationContext(), StreamingAudioService.class);
         stopService(intent);
+        //
+        MakeTrackCurrentByUID(-1);
     }
 
     //

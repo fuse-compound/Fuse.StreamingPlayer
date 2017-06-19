@@ -374,6 +374,7 @@ namespace StreamingPlayer
                 Status = PlayerStatus.Stopped;
                 _internalState = iOSPlayerState.Unknown;
                 _player = null;
+                MakeTrackCurrentByUID(-1);
             }
         }
 
