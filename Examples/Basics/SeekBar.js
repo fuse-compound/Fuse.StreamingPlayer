@@ -29,44 +29,29 @@ function createNewTimer() {
 //-------------------------------
 
 var interacting = function() {
-	console.log("interacting");
-	if (endInteractionTimeout !== null) {
-		console.log("interacting: clearTimeout");
+	if (endInteractionTimeout !== null)
 		clearTimeout(endInteractionTimeout);
-	}
 	isInteracting = true;
 };
 
 
 var seekToSliderValue = function() {
-	if (isInteracting) {
-		console.log("seekToSliderValue");
-		if (sliderValue.value)
-		{
-			console.log("seekToSliderValue: " + sliderValue.value);
-			StreamingPlayer.seek(sliderValue.value);
-		}
-		endInteractionTimeout = setTimeout(function() {
-			isInteracting = false;
-		}, 500);
-	}
+	if (!isInteracting)
+		return;
+	if (sliderValue.value)
+		StreamingPlayer.seek(sliderValue.value);
+	endInteractionTimeout = setTimeout(function() { isInteracting = false; }, 500);
 };
 
 progress.addSubscriber(function(x) {
 	if (isInteracting || duration.value==0)
 		return;
-	var ret = x.value / duration.value;
-	console.log("progress callback - progress: " + x.value + "setting slider to: " + ret);
-	sliderValue.value = ret;
+	sliderValue.value = (x.value / duration.value);
 });
 
 sliderValue.onValueChanged(function(val) {
 	if (isInteracting)
-	{
-		var newVal = (val * duration.value);
-		console.log("slideValue changed: setting progress to " + newVal);
-		progress.value = newVal;
-	}
+		progress.value = (val * duration.value);;
 });
 
 timer = createNewTimer();

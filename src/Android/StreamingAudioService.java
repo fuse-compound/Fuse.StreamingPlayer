@@ -363,7 +363,7 @@ public final class StreamingAudioService
             public void onSeekTo(long pos)
             {
                 super.onSeekTo(pos);
-                Seek((int) pos);
+                Seek((int) pos * 1000);
             }
 
             @Override
@@ -558,6 +558,7 @@ public final class StreamingAudioService
         if (_prepared)
         {
             _player.seekTo(milliseconds);
+            setPlaybackState(PlaybackStateCompat.STATE_PLAYING, _player.getCurrentPosition());
         }
     }
 
@@ -759,12 +760,20 @@ public final class StreamingAudioService
 
         public final double GetCurrentPosition()
         {
-            long currentPosition = _lastPlayerState.getPosition();
-            if (_lastPlayerState.getState() != PlaybackStateCompat.STATE_PAUSED) {
-                long timeDelta = SystemClock.elapsedRealtime() - _lastPlayerState.getLastPositionUpdateTime();
-                currentPosition += (int) timeDelta * _lastPlayerState.getPlaybackSpeed();
+            if (_lastPlayerState == null)
+            {
+                return 0;
             }
-            return currentPosition;
+            else
+            {
+                long currentPosition = _lastPlayerState.getPosition();
+                if (_lastPlayerState.getState() != PlaybackStateCompat.STATE_PAUSED)
+                {
+                    long timeDelta = SystemClock.elapsedRealtime() - _lastPlayerState.getLastPositionUpdateTime();
+                    currentPosition += (int) timeDelta * _lastPlayerState.getPlaybackSpeed();
+                }
+                return currentPosition / 1000.0;
+            }
         }
 
         public void SetPlaylist(Track[] tracks)
@@ -795,7 +804,10 @@ public final class StreamingAudioService
 
         public final double GetCurrentTrackDuration()
         {
-            return _currentTrack.Duration;
+            if (_currentTrack != null)
+                return _currentTrack.Duration;
+            else
+                return 0;
         }
     }
 }

@@ -400,13 +400,13 @@ namespace StreamingPlayer
         static public void Forward()
         {
             if (IsConnected)
-                NextImpl(_client);
+                ForwardImpl(_client);
         }
 
         static public void Backward()
         {
             if (IsConnected)
-                PreviousImpl(_client);
+                BackwardImpl(_client);
         }
 
         [Foreign(Language.Java)]
@@ -424,14 +424,14 @@ namespace StreamingPlayer
         @}
 
         [Foreign(Language.Java)]
-        static void NextImpl(Java.Object client)
+        static void BackwardImpl(Java.Object client)
         @{
             StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
             sClient.Backward();
         @}
 
         [Foreign(Language.Java)]
-        static void PreviousImpl(Java.Object client)
+        static void ForwardImpl(Java.Object client)
         @{
             StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
             sClient.Forward();
