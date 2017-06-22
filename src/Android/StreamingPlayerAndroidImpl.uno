@@ -135,7 +135,10 @@ namespace StreamingPlayer
                         {
                             @Override public void OnCurrentTrackChanged(Track track)
                             {
-                                @{StreamingPlayer.OnCurrentTrackChanged(Track):Call(@{Track(int, string, string, string, string, double):New(track.UID, track.Name, track.Artist, track.Url, track.ArtworkUrl, track.Duration)})};
+                                if (track!=null)
+                                    @{StreamingPlayer.OnCurrentTrackChanged(Track):Call(@{Track(int, string, string, string, string, double):New(track.UID, track.Name, track.Artist, track.Url, track.ArtworkUrl, track.Duration)})};
+                                else
+                                    @{StreamingPlayer.OnCurrentTrackChanged(Track):Call(null)};
                             }
                             @Override public void OnInternalStatusChanged(int i)
                             {
