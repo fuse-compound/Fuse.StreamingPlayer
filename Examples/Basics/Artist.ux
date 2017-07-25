@@ -2,7 +2,6 @@
     <Router ux:Dependency="router" />
     <JavaScript File="Artist.js"/>
     <DockPanel>
-        <StatusBarBackground Dock="Top"/>
         <ScrollView>
             <StackPanel>
                 <Button Text="Refresh" Clicked="{refreshClicked}" />
@@ -13,6 +12,5 @@
                 </Each>
             </StackPanel>
         </ScrollView>
-        <BottomBarBackground Dock="Bottom" />
     </DockPanel>
 </Page>

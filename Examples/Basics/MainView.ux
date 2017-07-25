@@ -2,8 +2,13 @@
     <iOS.StatusBarConfig Style="Light" />
     <Android.StatusBarConfig Color="#7f5ce6" />
     <Router ux:Name="router" />
-    <Navigator DefaultPath="artists">
-        <ArtistPage ux:Template="artists" router="router" />
-        <PlayPage ux:Template="play" router="router" />
-    </Navigator>
+
+    <DockPanel>
+        <StatusBarBackground Dock="Top"/>
+        <Navigator DefaultPath="artists">
+            <ArtistPage ux:Template="artists" router="router" />
+            <PlayPage ux:Template="play" router="router" />
+        </Navigator>
+        <BottomBarBackground Dock="Bottom" />
+    </DockPanel>
 </App>

@@ -2,7 +2,6 @@
     <JavaScript File="play.js"/>
     <Router ux:Dependency="router" />
     <DockPanel>
-        <StatusBarBackground Dock="Top"/>
         <ScrollView>
             <StackPanel>
                 <Each Items="{tracks}">
@@ -22,12 +21,14 @@
             <StackPanel Orientation="Horizontal" ItemSpacing="40" ContentAlignment="Center" Padding="20">
                 <TextButton Value="Backward" Clicked="{backwardClicked}" />
                 <TextButton Value="Prev" Clicked="{prevClicked}" />
-                <TextButton Value="Stop" Clicked="{backClicked}" />
-                <TextButton Value="Play" Clicked="{playClicked}" />
                 <TextButton Value="Next" Clicked="{nextClicked}" />
                 <TextButton Value="Forward" Clicked="{forwardClicked}" />
             </StackPanel>
+            <StackPanel Orientation="Horizontal" ItemSpacing="40" ContentAlignment="Center" Padding="20">
+                <TextButton Value="Stop" Clicked="{backClicked}" />
+                <TextButton Value="Pause" Clicked="{pauseClicked}" />
+                <TextButton Value="Play" Clicked="{playClicked}" />
+            </StackPanel>
         </StackPanel>
-        <BottomBarBackground Dock="Bottom" />
     </DockPanel>
 </Page>

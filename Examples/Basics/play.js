@@ -37,6 +37,7 @@ module.exports = {
 
 	backClicked: backClicked,
 	playClicked: StreamingPlayer.play,
+	pauseClicked: StreamingPlayer.pause,
 
 	tracks: tracks
 };
