@@ -295,7 +295,6 @@ namespace StreamingPlayer
 
         static void OnIsLikelyToKeepUpChanged()
         {
-            debug_log("OnIsLikelyToKeepUpChanged");
             if (Status == PlayerStatus.Paused)
                 return;
             var isLikelyToKeepUp = IsLikelyToKeepUp;
@@ -318,7 +317,6 @@ namespace StreamingPlayer
 
         static void PlayerItemDidReachEnd()
         {
-            debug_log("We did reach the end of our track");
             Next();
         }
 
@@ -346,7 +344,6 @@ namespace StreamingPlayer
 
         static public void Resume()
         {
-            debug_log("Resume UNO called");
             if (_player != null)
             {
                 PlayImpl(_player);
@@ -506,7 +503,6 @@ namespace StreamingPlayer
             LockScreenMediaControlsiOSImpl.Init();
             if (!DidAddAVPlayerItemDidPlayToEndTimeNotification)
             {
-                debug_log("REGISTERING OBS");
                 ObserveAVPlayerItemDidPlayToEndTimeNotification(PlayerItemDidReachEnd, CurrentPlayerItem);
                 DidAddAVPlayerItemDidPlayToEndTimeNotification = true;
             }

@@ -20,7 +20,6 @@ namespace StreamingPlayer
         {
             if (_initialized) return;
 
-            debug_log("Registering handlers");
             RegisterHandlers(Next,Previous,Play,Pause,Seek);
             StreamingPlayer.HasNextChanged += OnHasNextChanged;
             StreamingPlayer.HasPreviousChanged += OnHasPreviousChanged;
@@ -64,7 +63,6 @@ namespace StreamingPlayer
 
         static void Seek(double posInSec)
         {
-            debug_log("seek from lock screen");
             var duration = StreamingPlayer.Duration;
             if (duration == 0.0)
                 return;
@@ -113,6 +111,7 @@ namespace StreamingPlayer
 
 
             MPRemoteCommandCenter *commandCenter = [MPRemoteCommandCenter sharedCommandCenter];
+            // {TODO} lower version support
             NSOperatingSystemVersion ios9_0_1 = (NSOperatingSystemVersion){9, 0, 1};
 
             [commandCenter.playCommand addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent *event) {

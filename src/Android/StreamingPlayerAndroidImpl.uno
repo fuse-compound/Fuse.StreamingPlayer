@@ -176,14 +176,12 @@ namespace StreamingPlayer
 
         static void OnStatusChanged()
         {
-            debug_log("Status changed (uno): " + Status);
             if (StatusChanged != null)
                 StatusChanged(Status);
         }
 
         static void OnCurrentTrackChanged(Track track)
         {
-            debug_log("Current track changed");
             CurrentTrackChanged(track);
         }
 
@@ -240,7 +238,6 @@ namespace StreamingPlayer
         static void PlayImpl(Java.Object client)
         @{
             StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
-            debug_log("PlayImpl:"+sClient);
             sClient.Play();
         @}
 
@@ -338,7 +335,6 @@ namespace StreamingPlayer
         //int id, string name, string url, string artworkUrl, double duration
         static public void SetPlaylist(Track[] tracks)
         {
-            debug_log("set tracks:" + tracks);
             if (tracks!=null)
             {
                 if (_service == null)
@@ -346,10 +342,8 @@ namespace StreamingPlayer
 
                 if (IsConnected)
                 {
-                    debug_log("Android: set current playlist");
                     SetPlaylistImpl(_client, tracks, tracks.Length);
                 } else {
-                    debug_log("Android: caching as _pendingPlaylist");
                     _pendingPlaylist = tracks;
                 }
             }
@@ -359,21 +353,19 @@ namespace StreamingPlayer
         static void SetPlaylistImpl(Java.Object client, object unoTracks, int len)
         @{
             StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
-            debug_log("well bugger:"+client+","+unoTracks+","+len);
+
             java.util.ArrayList<Track> tracks = new java.util.ArrayList<Track>();
+
             for (int i =0; i<len; i++)
                 tracks.add((Track)@{NthToJavaTrack(object,int):Call(unoTracks, i)});
 
-            debug_log("Made it to here");
             sClient.SetPlaylist(tracks.toArray(new Track[tracks.size()]));
         @}
 
         static Java.Object NthToJavaTrack(object boxedArr, int n)
         {
-            debug_log("fuck:"+boxedArr);
             var arr = (Track[])boxedArr;
             var track = arr[n];
-            debug_log("Track:"+track+","+arr+","+n);
             return ToJavaTrack(track);
         }
 

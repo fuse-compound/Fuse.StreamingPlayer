@@ -86,7 +86,6 @@ namespace StreamingPlayer
         public object Next(Context c, object[] args)
         {
             if (!_playerInitialized) return null;
-            debug_log("Next was called from JS");
             StreamingPlayer.Next();
             return null;
         }
