@@ -317,7 +317,8 @@ namespace StreamingPlayer
 
         static void PlayerItemDidReachEnd()
         {
-            Next();
+            if (PlaylistNextTrackUID() > -1)
+                Next();
         }
 
         [Foreign(Language.ObjC)]
