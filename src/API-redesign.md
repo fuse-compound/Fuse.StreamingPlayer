@@ -47,5 +47,3 @@ Huh we actually have some issues:
  - History requires the track objects
  - current may no longer be in the playlist
  - so getCurrent can't be an index
-
-`slime-inhibit-pipelining`, try changing it's value to nil. This should mean #'slime-background-activities-enabled-p returns true and then it will dispatch #'slime-echo-arglist asynchronously
