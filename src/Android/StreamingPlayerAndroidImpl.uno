@@ -252,24 +252,6 @@ namespace StreamingPlayer
                 Play();
         }
 
-
-
-        static public void Resume()
-        {
-            if (IsConnected)
-            {
-                Status = PlayerStatus.Playing;
-                ResumeImpl(_client);
-            }
-        }
-
-        [Foreign(Language.Java)]
-        static void ResumeImpl(Java.Object client)
-        @{
-            StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
-            sClient.Resume();
-        @}
-
         static public void Seek(double toProgress)
         {
             if (IsConnected)

@@ -23,7 +23,6 @@ namespace StreamingPlayer
         static public bool Init() { return true; }
         static public void SetPlaylist(Track[] tracks) {}
         static public void Play() {}
-        static public void Resume() {}
         static public void Pause() {}
         static public void Stop() {}
         static public void Seek(double toProgress) {}

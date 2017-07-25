@@ -370,11 +370,7 @@ public final class StreamingAudioService
             public void onCustomAction(String action, Bundle extras)
             {
                 super.onCustomAction(action, extras);
-                if (action.equals("Resume"))
-                {
-                    Resume();
-                }
-                else if (action.equals("SetPlaylist"))
+				if (action.equals("SetPlaylist"))
                 {
                     SetPlaylist((Track[])extras.getParcelableArray("tracks"));
                 }
@@ -716,11 +712,6 @@ public final class StreamingAudioService
         public final void Play()
         {
             _controller.getTransportControls().play();
-        }
-
-        public final void Resume()
-        {
-            _controller.getTransportControls().sendCustomAction("Resume", null);
         }
 
         public final void Pause()

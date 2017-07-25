@@ -37,7 +37,6 @@ namespace StreamingPlayer
             AddMember(new NativeFunction("setPlaylist", (NativeCallback)SetPlaylist));
             AddMember(new NativeFunction("play", (NativeCallback)Play));
             AddMember(new NativeFunction("pause", (NativeCallback)Pause));
-            AddMember(new NativeFunction("resume", (NativeCallback)Resume));
             AddMember(new NativeFunction("stop", (NativeCallback)Stop));
             AddMember(new NativeFunction("seek", (NativeCallback)Seek));
 
@@ -157,13 +156,6 @@ namespace StreamingPlayer
         object Play(Context c, object[] args)
         {
             StreamingPlayer.Play();
-            return null;
-        }
-
-        object Resume(Context c, object[] args)
-        {
-            if (!_playerInitialized) return null;
-            StreamingPlayer.Resume();
             return null;
         }
 

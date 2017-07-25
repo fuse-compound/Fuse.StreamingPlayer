@@ -23,17 +23,19 @@ src/iOS/LockScreenControls.uno:116:            // {TODO} lower version support
 ## Testing Driven
 
 - fix up the example
- - how much should I do?
  - click on tracks would be a good start
+ 
 - Should play on -1 call next?
 
-- you can 'next' passed the end of the queue and it wraps on iOS (same as above issue I think)
- - nope, it's the same on android. Maybe this is fine?
 - maybe dont jump to -1 when run out of tracks.. hmm
-- test pause
+
 - Seems to be possible in some cases to use backward to get to entries from previous playlists..which is itself is fine, but it seemed intermitant and (on android) I jumped back to the first playlist rather that the intermediate tracks. When do tracks get added to the history?
+
 - Android: Not always clearing the controls
+
 - add option to specify default 'next' behaviour
+
+- fix the artwork downloading nonsence on android
 
 ## Done
 
@@ -44,4 +46,13 @@ I: remove all debug_log statements (turn any critical ones into issues)
 R: -
 
 I: playlist looping by default (only on iOS)
+R: -
+
+I: you can 'next' passed the end of the queue and it wraps. Maybe this is fine?
+R: Yeah, it's fine
+
+I: test pause
+R: pause is fine
+
+I: play always resets on iOS, should unpause when paused
 R: -

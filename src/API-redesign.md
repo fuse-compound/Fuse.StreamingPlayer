@@ -16,9 +16,7 @@
 - plays current-track, if track playing seek to 0
 - if no current-track, set next track as current & play
 - if no playlist then do nothing
-
-## Resume
-- Resume/Play the current track
+- is paused, resume
 
 ## Stop
 - stop playing
