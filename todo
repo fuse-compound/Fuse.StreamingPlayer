@@ -1,0 +1,46 @@
+# Todos
+
+## Comments
+
+src/Android/StreamingAudioService.java:45:    AndroidPlayerState _state = AndroidPlayerState.Idle; // TODO can we merge this with android's state stuff?
+
+src/Android/StreamingAudioService.java:96:    private int MoveToNextPlaylistTrack() // {TODO} THIS NEEDS TO CHOP OFF THE END OF THE HISTORY BEFORE PUSH
+
+src/Android/StreamingAudioService.java:227:            // Calling with -1 is valid as this is a command to focus no track TODO really?
+
+src/Android/StreamingAudioService.java:255:            // {TODO} announce track
+
+src/Android/StreamingAudioService.java:603:        // {TODO} why stop the service?
+
+src/iOS/LockScreenControls.uno:116:            // {TODO} lower version support
+
+## debug_log to be removed
+
+- src/Android/StreamingPlayerAndroidImpl.uno:81   how should we communicate OnRejected?
+- src/Android/StreamingPlayerAndroidImpl.uno:165   how should we communicate onServiceDisconnected?
+- src/Track.uno:80 Implement TryConvert so we can use IDs for diffing
+
+## Testing Driven
+
+- fix up the example
+ - how much should I do?
+ - click on tracks would be a good start
+- Should play on -1 call next?
+
+- you can 'next' passed the end of the queue and it wraps on iOS (same as above issue I think)
+ - nope, it's the same on android. Maybe this is fine?
+- maybe dont jump to -1 when run out of tracks.. hmm
+- test pause
+- Seems to be possible in some cases to use backward to get to entries from previous playlists..which is itself is fine, but it seemed intermitant and (on android) I jumped back to the first playlist rather that the intermediate tracks. When do tracks get added to the history?
+- Android: Not always clearing the controls
+
+## Done
+
+I: Forward works even when no history
+R: This is correct behaviour.
+
+I: remove all debug_log statements (turn any critical ones into issues)
+R: -
+
+I: playlist looping by default (only on iOS)
+R: -
