@@ -341,9 +341,17 @@ namespace StreamingPlayer
         static public void Play()
         {
             if (Status == PlayerStatus.Paused)
+            {
                 Resume();
-            else
+            }
+            else if (_currentTrackUID > -1)
+            {
                 MakeTrackCurrentByUID(_currentTrackUID);
+            }
+            else
+            {
+                Next();
+            }
         }
 
         static internal void Resume()

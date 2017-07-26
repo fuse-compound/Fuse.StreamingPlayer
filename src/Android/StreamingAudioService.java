@@ -328,7 +328,16 @@ public final class StreamingAudioService
             {
                 super.onPlay();
                 if (tryTakeAudioFocus())
-                    Resume();
+                {
+                    if (_currentTrackUID>-1)
+                    {
+                        Resume();
+                    }
+                    else
+                    {
+                        Next();
+                    }
+                }
             }
 
             @Override
@@ -370,7 +379,7 @@ public final class StreamingAudioService
             public void onCustomAction(String action, Bundle extras)
             {
                 super.onCustomAction(action, extras);
-				if (action.equals("SetPlaylist"))
+                if (action.equals("SetPlaylist"))
                 {
                     SetPlaylist((Track[])extras.getParcelableArray("tracks"));
                 }

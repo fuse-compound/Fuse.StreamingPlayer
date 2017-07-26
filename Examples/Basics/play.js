@@ -18,7 +18,6 @@ var paramObs = this.Parameter.onValueChanged(module, function(param) {
 		});
 		tracks.addAll(tmp);
 		StreamingPlayer.setPlaylist(tmp);
-		StreamingPlayer.play();
 	}).catch(function(e) {
 		console.log("Well damn:" + e);
 	});

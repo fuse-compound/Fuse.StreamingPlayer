@@ -40,7 +40,6 @@ namespace StreamingPlayer
             AddMember(new NativeFunction("pause", (NativeCallback)Pause));
             AddMember(new NativeFunction("stop", (NativeCallback)Stop));
             AddMember(new NativeFunction("seek", (NativeCallback)Seek));
-            AddMember(new NativeFunction("setNextPrevBehavior", (NativeCallback)SetNextPrevBehavior));
 
             AddMember(new NativeProperty<PlayerStatus,string>("status", GetStatus, null, PlayerStatusConverter.Convert));
 
