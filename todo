@@ -37,6 +37,8 @@ src/iOS/LockScreenControls.uno:116:            // {TODO} lower version support
 
 - assess what fields could be optional
 
+- dont set notification on seek
+
 ## Done
 
 I: Forward works even when no history
