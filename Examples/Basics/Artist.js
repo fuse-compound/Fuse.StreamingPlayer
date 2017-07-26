@@ -15,7 +15,7 @@ var refreshClicked = function() {
 
 var trackClicked = function(item) {
 	console.log("play all of: " + JSON.stringify(item.data.name));
-	router.goto("play", { "artistID" : item.data.name});
+	router.goto("play", { "artistID" : item.data.name });
 };
 
 module.exports = {

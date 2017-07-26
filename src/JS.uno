@@ -30,6 +30,7 @@ namespace StreamingPlayer
                 Marshal.AddConverter(new TrackConverter());
 
             Resource.SetGlobalKey(_instance, "FuseJS/StreamingPlayer");
+            AddMember(new NativeFunction("makeTrack", (NativeCallback)MakeTrack));
             AddMember(new NativeFunction("next", (NativeCallback)Next));
             AddMember(new NativeFunction("previous", (NativeCallback)Previous));
             AddMember(new NativeFunction("backward", (NativeCallback)Backward));
@@ -39,6 +40,7 @@ namespace StreamingPlayer
             AddMember(new NativeFunction("pause", (NativeCallback)Pause));
             AddMember(new NativeFunction("stop", (NativeCallback)Stop));
             AddMember(new NativeFunction("seek", (NativeCallback)Seek));
+            AddMember(new NativeFunction("setNextPrevBehavior", (NativeCallback)SetNextPrevBehavior));
 
             AddMember(new NativeProperty<PlayerStatus,string>("status", GetStatus, null, PlayerStatusConverter.Convert));
 
@@ -80,6 +82,15 @@ namespace StreamingPlayer
         void OnStatusChanged(PlayerStatus status)
         {
             Emit("statusChanged", status.Stringify());
+        }
+
+        public object MakeTrack(Context c, object[] args)
+        {
+            if (!_playerInitialized) return null;
+            var jsObject = (Fuse.Scripting.Object)args[0];
+            if (!jsObject.ContainsKey("uid"))
+                jsObject["uid"] = Track.NewUID();
+            return jsObject;
         }
 
         public object Next(Context c, object[] args)

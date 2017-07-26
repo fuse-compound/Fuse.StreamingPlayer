@@ -81,9 +81,8 @@ namespace StreamingPlayer
         {
             if (CanConvert(t))
             {
-                debug_log("MUST FIX TRYCONVERT");
                 var jsObject = (Fuse.Scripting.Object)o;
-                var uid = Track.NewUID(); //Marshal.ToInt(jsObject["uid"]);
+                var uid = Marshal.ToInt(jsObject["uid"]);
                 var name = jsObject["name"].ToString();
                 var artist = jsObject["artist"].ToString();
                 var url = jsObject["url"].ToString();
