@@ -25,7 +25,6 @@ src/iOS/LockScreenControls.uno:116:            // {TODO} lower version support
 - fix up the example
  - click on tracks would be a good start
 
-
 - Seems to be possible in some cases to use backward to get to entries from previous playlists..which is itself is fine, but it seemed intermitant and (on android) I jumped back to the first playlist rather that the intermediate tracks. When do tracks get added to the history?
 
 - Android: Not always clearing the controls
@@ -35,6 +34,10 @@ src/iOS/LockScreenControls.uno:116:            // {TODO} lower version support
 - iOS: when playlist is done we keep getting 'Note' in the logs. Seems like somehting is still running. Stops when you press 'Stop', cool so it'll be something simple then.
 
 - example: onvaluechanged needs a module or something
+
+- test not setting artwork
+
+- assess what fields could be optional
 
 ## Done
 
