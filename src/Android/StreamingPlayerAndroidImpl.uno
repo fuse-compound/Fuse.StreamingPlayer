@@ -314,6 +314,18 @@ namespace StreamingPlayer
             sClient.Stop();
         @}
 
+        static public void SetNextPrevBehavior(NextPrevBehavior behavior)
+        {
+            SetNextPrevBehaviorImpl(_client, (sbyte)behavior);
+        }
+
+        [Foreign(Language.Java)]
+        static public void SetNextPrevBehaviorImpl(Java.Object client, sbyte behavior)
+        @{
+            StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
+            sClient.SetNextPrevBehavior(behavior);
+        @}
+
         //int id, string name, string url, string artworkUrl, double duration
         static public void SetPlaylist(Track[] tracks)
         {

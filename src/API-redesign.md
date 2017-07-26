@@ -1,4 +1,4 @@
-# Expected Behaviour
+# Expected Behavior
 
 ## Set Playlist (plus optional next-track index, optional subseq?)
 - sets playlist

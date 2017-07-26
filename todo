@@ -33,14 +33,22 @@ src/iOS/LockScreenControls.uno:116:            // {TODO} lower version support
 
 - Android: Not always clearing the controls
 
-- add option to specify default 'next' behaviour
+- add option to specify default 'next' behavior.
+ - What? just call the ones you want
+  - Aye but what about lockscreen/etc controls?
+   - still feels jank on iOS. test more
+   - implement for android
 
 - fix the artwork downloading nonsence on android
+
+- iOS: when playlist is done we keep getting 'Note' in the logs. Seems like somehting is still running. Stops when you press 'Stop', cool so it'll be something simple then.
+
+- example: onvaluechanged needs a module or something
 
 ## Done
 
 I: Forward works even when no history
-R: This is correct behaviour.
+R: This is correct behavior.
 
 I: remove all debug_log statements (turn any critical ones into issues)
 R: -

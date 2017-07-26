@@ -15,6 +15,7 @@ namespace StreamingPlayer
     extern(iOS) static class LockScreenMediaControlsiOSImpl
     {
         static bool _initialized = false;
+        static internal NextPrevBehavior ControlBehavior = NextPrevBehavior.Playlist;
 
         static public void Init()
         {
@@ -44,11 +45,25 @@ namespace StreamingPlayer
 
         static void Next()
         {
-            StreamingPlayer.Next();
+            if (ControlBehavior == NextPrevBehavior.Playlist)
+            {
+                StreamingPlayer.Next();
+            }
+            else
+            {
+                StreamingPlayer.Forward();
+            }
         }
         static void Previous()
         {
-            StreamingPlayer.Previous();
+            if (ControlBehavior == NextPrevBehavior.Playlist)
+            {
+                StreamingPlayer.Previous();
+            }
+            else
+            {
+                StreamingPlayer.Backward();
+            }
         }
 
         static void Play()

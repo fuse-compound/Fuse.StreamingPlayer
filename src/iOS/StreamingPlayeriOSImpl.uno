@@ -379,6 +379,11 @@ namespace StreamingPlayer
             }
         }
 
+        static public void SetNextPrevBehavior(NextPrevBehavior behavior)
+        {
+            LockScreenMediaControlsiOSImpl.ControlBehavior = behavior;
+        }
+
         static public void Seek(double toProgress)
         {
             if (Status == PlayerStatus.Loading)
@@ -537,12 +542,16 @@ namespace StreamingPlayer
         {
             if (HasNextChanged != null)
             {
-                var hasNext = PlaylistNextTrackUID() > -1;
+                var hasNext = (LockScreenMediaControlsiOSImpl.ControlBehavior == NextPrevBehavior.Playlist)
+                    ? PlaylistNextTrackUID() > -1
+                    : HistoryNextTrackUID() > -1;
                 HasNextChanged(hasNext);
             }
             if (HasPreviousChanged != null)
             {
-                var hasPrev = PlaylistPrevTrackUID() > -1;
+                var hasPrev = (LockScreenMediaControlsiOSImpl.ControlBehavior == NextPrevBehavior.Playlist)
+                    ? PlaylistPrevTrackUID() > -1
+                    : HistoryPrevTrackUID() > -1;
                 HasPreviousChanged(hasPrev);
             }
         }

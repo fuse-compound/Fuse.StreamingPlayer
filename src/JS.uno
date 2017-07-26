@@ -190,5 +190,22 @@ namespace StreamingPlayer
             StreamingPlayer.Stop();
             return null;
         }
+
+        object[] SetNextPrevBehavior(Context c, object[] args)
+        {
+            if (!_playerInitialized) return null;
+
+            var behavior = (string)args[0];
+            if (behavior == "playlist")
+            {
+                StreamingPlayer.SetNextPrevBehavior(NextPrevBehavior.Playlist);
+            }
+            else if (behavior == "history")
+            {
+                StreamingPlayer.SetNextPrevBehavior(NextPrevBehavior.History);
+            }
+
+            return null;
+        }
     }
 }

@@ -56,6 +56,7 @@ public final class StreamingAudioService
     private Stack<Integer> _trackHistory = new Stack<Integer>();
     private int _trackPlaylistCurrentIndex = -1;
     private int _trackHistoryCurrentIndex = -1; // set to 0 every time we move structurally.
+	private byte _nextPrevBehavior = 0;
 
     // Query Playlist and History
 
@@ -382,6 +383,10 @@ public final class StreamingAudioService
                 {
                     Backward();
                 }
+				else if (action.equals("SetNextPrevBehavior"))
+				{
+					_nextPrevBehavior = extras.getByte("behavior");
+				}
             }
         });
 
@@ -772,6 +777,13 @@ public final class StreamingAudioService
             Bundle bTrack = new Bundle();
             bTrack.putParcelableArray("tracks", tracks);
             _controller.getTransportControls().sendCustomAction("SetPlaylist", bTrack);
+        }
+
+        public void SetNextPrevBehavior(byte behavior)
+        {
+            Bundle bundle = new Bundle();
+            bundle.putByte("behavior", behavior);
+            _controller.getTransportControls().sendCustomAction("SetNextPrevBehavior", bundle);
         }
 
         @Override

@@ -7,6 +7,11 @@ using Uno.Compiler.ExportTargetInterop;
 
 namespace StreamingPlayer
 {
+    public enum NextPrevBehavior
+    {
+        Playlist=0, History=1
+    }
+
     public enum PlayerStatus
     {
         Stopped, Loading, Playing, Paused, Error

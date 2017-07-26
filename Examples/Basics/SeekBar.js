@@ -56,6 +56,8 @@ sliderValue.onValueChanged(function(val) {
 
 timer = createNewTimer();
 
+StreamingPlayer.setNextPrevBehavior("history");
+
 module.exports = {
 	seekToSliderValue : seekToSliderValue,
 	interacting : interacting,
