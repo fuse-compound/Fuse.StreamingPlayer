@@ -20,17 +20,32 @@ import java.net.URL;
 
 public final class ArtworkMediaNotification
 {
+    static String _cachedArtworkURL = null;
+    static Bitmap _cachedArtwork = null;
+
+    static void FreeCached()
+    {
+        _cachedArtwork.recycle();
+        _cachedArtwork = null;
+    }
+
     private class DownloadArtworkBitmapTask extends AsyncTask<String, Void, Bitmap>
     {
-
         protected Bitmap doInBackground(String... urls)
         {
             if (urls.length > 0)
             {
                 try
                 {
-                    URL url = new URL(urls[0]);
+                    String urlStr = urls[0];
+                    if (_cachedArtworkURL !=null && _cachedArtworkURL.equals(urlStr))
+                    {
+                        return _cachedArtwork;
+                    }
+                    URL url = new URL(urlStr);
                     Bitmap myBitmap = BitmapFactory.decodeStream(url.openConnection().getInputStream());
+                    _cachedArtwork = myBitmap;
+                    _cachedArtworkURL = urlStr;
                     return myBitmap;
                 }
                 catch (IOException e)
