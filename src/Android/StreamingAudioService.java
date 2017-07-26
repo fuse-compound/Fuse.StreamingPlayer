@@ -438,9 +438,6 @@ public final class StreamingAudioService
             case PlaybackStateCompat.STATE_STOPPED:
             {
                 unoState = AndroidPlayerState.Idle;
-                notifKeycode = KeyEvent.KEYCODE_MEDIA_PLAY;
-                notifIcon = android.R.drawable.ic_media_play;
-                notifText = "MakeTrackCurrentByUID";
                 break;
             }
             case PlaybackStateCompat.STATE_PAUSED:

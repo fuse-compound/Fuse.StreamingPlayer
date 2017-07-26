@@ -27,8 +27,6 @@ src/iOS/LockScreenControls.uno:116:            // {TODO} lower version support
 
 - Seems to be possible in some cases to use backward to get to entries from previous playlists..which is itself is fine, but it seemed intermitant and (on android) I jumped back to the first playlist rather that the intermediate tracks. When do tracks get added to the history?
 
-- Android: Not always clearing the controls
-
 - fix the artwork downloading nonsence on android
 
 - iOS: when playlist is done we keep getting 'Note' in the logs. Seems like somehting is still running. Stops when you press 'Stop', cool so it'll be something simple then.
@@ -66,4 +64,7 @@ I: dont jump to -1 when run out of tracks
 R: nope. at least, not for now
 
 I: make play on -1 calls next
+R: -
+
+I: Android not clearing controls on stop
 R: -
