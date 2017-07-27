@@ -49,7 +49,7 @@ progress.addSubscriber(function(x) {
 	sliderValue.value = (x.value / duration.value);
 });
 
-sliderValue.onValueChanged(function(val) {
+sliderValue.onValueChanged(module, function(val) {
 	if (isInteracting)
 		progress.value = (val * duration.value);;
 });

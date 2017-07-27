@@ -27,11 +27,7 @@ src/iOS/LockScreenControls.uno:116:            // {TODO} lower version support
 
 - Seems to be possible in some cases to use backward to get to entries from previous playlists..which is itself is fine, but it seemed intermitant and (on android) I jumped back to the first playlist rather that the intermediate tracks. When do tracks get added to the history?
 
-- fix the artwork downloading nonsence on android
-
 - iOS: when playlist is done we keep getting 'Note' in the logs. Seems like somehting is still running. Stops when you press 'Stop', cool so it'll be something simple then.
-
-- example: onvaluechanged needs a module or something
 
 - optional duration? (can't work with streaming ofc)
 
@@ -74,4 +70,13 @@ I: not setting artwork causes crash
 R: -
 
 I: make more fields optional
-R: - 
+R: -
+
+I: Add support for local artwork files
+R: -
+
+I: example has 'onvaluechanged needs a module' warning
+R: -
+
+I: android artwork caching
+R: dirt simple but will do the job for now.
