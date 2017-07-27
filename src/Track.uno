@@ -83,10 +83,10 @@ namespace StreamingPlayer
             {
                 var jsObject = (Fuse.Scripting.Object)o;
                 var uid = Marshal.ToInt(jsObject["uid"]);
-                var name = jsObject["name"].ToString();
-                var artist = jsObject["artist"].ToString();
+                var name = jsObject.ContainsKey("name") ? jsObject["name"].ToString() : "<unknown name>";
+                var artist = jsObject.ContainsKey("artist") ? jsObject["artist"].ToString() : "<unknown artist>";
                 var url = jsObject["url"].ToString();
-                var artworkUrl = jsObject["artworkUrl"].ToString();
+                var artworkUrl = jsObject.ContainsKey("artworkUrl") ? jsObject["artworkUrl"].ToString() : null;
                 var duration = Marshal.ToDouble(jsObject["duration"]);
                 return new Track(uid, name, artist, url, artworkUrl, duration);
             }

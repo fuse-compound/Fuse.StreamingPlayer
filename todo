@@ -33,11 +33,7 @@ src/iOS/LockScreenControls.uno:116:            // {TODO} lower version support
 
 - example: onvaluechanged needs a module or something
 
-- test not setting artwork
-
-- assess what fields could be optional
-
-- dont set notification on seek
+- optional duration? (can't work with streaming ofc)
 
 ## Done
 
@@ -70,3 +66,12 @@ R: -
 
 I: Android not clearing controls on stop
 R: -
+
+I: notification being set on seek
+R: -
+
+I: not setting artwork causes crash
+R: -
+
+I: make more fields optional
+R: - 

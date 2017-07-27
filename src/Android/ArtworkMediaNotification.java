@@ -1,15 +1,10 @@
 package com.fuse.StreamingPlayer;
 
-import android.app.Notification;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.media.session.MediaSession;
 import android.os.AsyncTask;
-import android.support.v4.view.KeyEventCompat;
 import android.support.v7.app.NotificationCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
@@ -81,15 +76,18 @@ public final class ArtworkMediaNotification
         _primaryActionTitle = primaryActionTitle;
         _primaryActionKeyEvent = primaryActionKeyEvent;
         _metadataBuilder = new MediaMetadataCompat.Builder(metadata);
-        new DownloadArtworkBitmapTask().execute(urlStr);
+        if (urlStr!=null)
+        {
+            new DownloadArtworkBitmapTask().execute(urlStr);
+        }
+        else
+        {
+            setArtworkBitmap(null);
+        }
     }
 
     public void setArtworkBitmap(Bitmap bmp)
     {
-        //This lets the album art be visible as the background while in the lock screen
-        _metadataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bmp);
-        _session.setMetadata(_metadataBuilder.build());
-
         // Time to make the notifications
         NotificationCompat.Builder builder = MediaStyleHelper.makeBuilder(_service, _session);
 
@@ -106,7 +104,12 @@ public final class ArtworkMediaNotification
         // icon
         builder.setSmallIcon(android.R.drawable.ic_media_play);
         if (bmp != null)
+        {
             builder.setLargeIcon(bmp);
+            //This lets the album art be visible as the background while in the lock screen
+            _metadataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bmp);
+            _session.setMetadata(_metadataBuilder.build());
+        }
 
         // dispatch
         NotificationManager notificationManager = (NotificationManager) _service.getSystemService(Context.NOTIFICATION_SERVICE);
