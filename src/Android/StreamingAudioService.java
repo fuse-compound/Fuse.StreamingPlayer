@@ -560,7 +560,10 @@ public final class StreamingAudioService
         if (_prepared)
         {
             _player.seekTo(milliseconds);
-            setPlaybackState(PlaybackStateCompat.STATE_PLAYING, _player.getCurrentPosition());
+            // We dont use our setPlaybackState as we don't want to touch the notification
+            int currentState = (int)_session.getController().getPlaybackState().getState();
+            _playbackStateBuilder.setState(currentState, _player.getCurrentPosition(), 1f);
+            _session.setPlaybackState(_playbackStateBuilder.build());
         }
     }
 
