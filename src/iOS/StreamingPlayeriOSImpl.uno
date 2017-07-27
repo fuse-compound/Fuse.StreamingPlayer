@@ -318,7 +318,13 @@ namespace StreamingPlayer
         static void PlayerItemDidReachEnd()
         {
             if (PlaylistNextTrackUID() > -1)
+            {
                 Next();
+            }
+            else
+            {
+                Stop();
+            }
         }
 
         [Foreign(Language.ObjC)]
