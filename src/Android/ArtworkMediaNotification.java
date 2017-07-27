@@ -11,6 +11,8 @@ import android.support.v4.media.session.MediaSessionCompat;
 import android.view.KeyEvent;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 
 public final class ArtworkMediaNotification
@@ -24,31 +26,65 @@ public final class ArtworkMediaNotification
         _cachedArtwork = null;
     }
 
+    static boolean IsRemoteFile(String url)
+    {
+        try
+        {
+            URI u = new URI(url);
+            return "http".equalsIgnoreCase(u.getScheme())
+                    || "https".equalsIgnoreCase(u.getScheme());
+        }
+        catch (URISyntaxException e)
+        {
+            return false;
+        }
+    }
+
     private class DownloadArtworkBitmapTask extends AsyncTask<String, Void, Bitmap>
     {
         protected Bitmap doInBackground(String... urls)
         {
             if (urls.length > 0)
             {
-                try
+                String urlStr = urls[0];
+                if (_cachedArtworkURL !=null && _cachedArtworkURL.equals(urlStr))
                 {
-                    String urlStr = urls[0];
-                    if (_cachedArtworkURL !=null && _cachedArtworkURL.equals(urlStr))
-                    {
-                        return _cachedArtwork;
-                    }
-                    URL url = new URL(urlStr);
-                    Bitmap myBitmap = BitmapFactory.decodeStream(url.openConnection().getInputStream());
-                    _cachedArtwork = myBitmap;
-                    _cachedArtworkURL = urlStr;
-                    return myBitmap;
+                    return _cachedArtwork;
                 }
-                catch (IOException e)
+                else if (IsRemoteFile(urlStr))
                 {
-                    Logger.Log("We were not able to get a bitmap of the artwork");
+                    return LoadRemote(urlStr);
+                }
+                else
+                {
+                    return LoadLocal(urlStr);
                 }
             }
             return null;
+        }
+
+        Bitmap LoadRemote(String urlStr)
+        {
+            try
+            {
+                URL url = new URL(urlStr);
+                Bitmap myBitmap = BitmapFactory.decodeStream(url.openConnection().getInputStream());
+                _cachedArtwork = myBitmap;
+                _cachedArtworkURL = urlStr;
+                return myBitmap;
+            }
+            catch (IOException e)
+            {
+                Logger.Log("We were not able to get a bitmap of the artwork");
+                return null;
+            }
+        }
+
+        Bitmap LoadLocal(String urlStr)
+        {
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+            return BitmapFactory.decodeFile(urlStr, options);
         }
 
         protected void onPostExecute(Bitmap result)
