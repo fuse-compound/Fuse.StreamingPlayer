@@ -35,7 +35,7 @@ namespace StreamingPlayer
 
         public static void SetTrackInfo(Track track)
         {
-            SetNowPlayingInfoCenterInfo(track.Name, track.Artist, NowPlayingInfoCenter.CreateArtworkFromUrl(track.ArtworkUrl), track.Duration);
+            SetNowPlayingInfoCenterInfo(track.Name, track.Artist, CreateArtworkFromUrl(track.ArtworkUrl), track.Duration);
         }
 
         [Foreign(Language.ObjC)]
@@ -55,13 +55,8 @@ namespace StreamingPlayer
             [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = playInfo;
         @}
 
-        static ObjC.Object CreateArtworkFromUrl(string url)
-        {
-            return MediaArtworkFromUrl(url);
-        }
-
         [Foreign(Language.ObjC)]
-        static ObjC.Object MediaArtworkFromUrl(string url)
+        static ObjC.Object CreateArtworkFromUrl(string url)
         @{
             UIImage *uiImage = [UIImage imageWithData:[NSData dataWithContentsOfURL: [[NSURL alloc] initWithString: url]]];
             if (uiImage != nil) {
