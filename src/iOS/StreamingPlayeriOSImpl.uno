@@ -82,18 +82,47 @@ namespace StreamingPlayer
 
         // Modify Playlist and History
 
-        static int MoveToNextPlaylistTrack() // THIS NEEDS TO CHOP OFF THE END OF THE HISTORY BEFORE PUSH
+        static void PushCurrentToHistory()
+        {
+            int cur = _trackPlaylistCurrentIndex;
+            if (cur >= 0)
+            {
+                _trackHistory.Add(_trackPlaylist[cur]);
+            }
+        }
+
+        static void DropFuture()
+        {
+            if (_trackHistoryCurrentIndex>-1)
+            {
+                var at = _trackHistory.Count - _trackHistoryCurrentIndex;
+                for (int i = 0; i < _trackHistoryCurrentIndex; i++)
+                {
+                    _trackHistory.RemoveAt(at);
+                }
+                _trackHistoryCurrentIndex = -1;
+            }
+        }
+
+        static int MoveToNextPlaylistTrack()
         {
             int uid = PlaylistNextTrackUID();
             if (uid >=0)
             {
-                int cur = _trackPlaylistCurrentIndex;
-                _trackPlaylistCurrentIndex += 1;
-                if (cur >= 0)
+                // If we were playing from history then we dont want to push the current
+                // track to history as it is already there.
+                bool wasntPlayingFromHistory = _trackHistoryCurrentIndex == -1;
+
+                // If we were in the history then moving structurally starts making a new
+                // history. This means we drop the future.
+                DropFuture();
+
+                if (wasntPlayingFromHistory)
                 {
-                    _trackHistory.Add(uid);
-                    _trackHistoryCurrentIndex = 0;
+                    PushCurrentToHistory();
                 }
+
+                _trackPlaylistCurrentIndex += 1;
             }
             return uid;
         }
@@ -103,29 +132,22 @@ namespace StreamingPlayer
             int uid = PlaylistPrevTrackUID();
             if (uid >=0)
             {
-                int cur = _trackPlaylistCurrentIndex;
+                // If we were playing from history then we dont want to push the current
+                // track to history as it is already there.
+                bool wasntPlayingFromHistory = _trackHistoryCurrentIndex == -1;
+
+                // If we were in the history then moving structurally starts making a new
+                // history. This means we drop the future.
+                DropFuture();
+
+                if (wasntPlayingFromHistory)
+                {
+                    PushCurrentToHistory();
+                }
+
                 _trackPlaylistCurrentIndex -= 1;
-                _trackHistory.Add(uid);
-                _trackHistoryCurrentIndex = 0;
             }
             return uid;
-        }
-
-        static int MoveToIndexedPlaylistTrack(int index)
-        {
-            if (index>=0 && index<_trackPlaylist.Count)
-            {
-                int uid = _trackPlaylist[index];
-                if (uid >= 0)
-                {
-                    int cur = _trackPlaylistCurrentIndex;
-                    _trackPlaylistCurrentIndex -= index;
-                    _trackHistory.Add(uid);
-                    _trackHistoryCurrentIndex = 0;
-                }
-                return uid;
-            }
-            return -1;
         }
 
         static int MoveBackInHistory()
@@ -181,8 +203,6 @@ namespace StreamingPlayer
         public static void SetPlaylist(Track[] tracks)
         {
             _trackPlaylist.Clear();
-
-            List<int> uids = new List<int>();
 
             foreach (Track track in tracks)
             {
@@ -299,7 +319,6 @@ namespace StreamingPlayer
                 return;
             var isLikelyToKeepUp = IsLikelyToKeepUp;
             if (isLikelyToKeepUp) {
-                var newState = GetStatus(_player);
                 var rate = GetRate(_player);
                 if (rate < 1.0) {
                     Resume();

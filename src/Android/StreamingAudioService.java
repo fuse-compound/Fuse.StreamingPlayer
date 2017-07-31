@@ -55,7 +55,26 @@ public final class StreamingAudioService
     private int _currentTrackUID = -1; // Must only EVER be set by MakeTrackCurrentByUID(uid)
     private Stack<Integer> _trackHistory = new Stack<Integer>();
     private int _trackPlaylistCurrentIndex = -1;
-    private int _trackHistoryCurrentIndex = -1; // set to 0 every time we move structurally.
+    private int _trackHistoryCurrentIndex = -1; // set to -1 every time we move structurally.
+
+    private int peekNth(Stack<Integer> stack, int n)
+    {
+        return stack.get(stack.size() - (1 + n));
+    }
+
+    private void pushToHistory(int uid)
+    {
+        _trackHistory.push(uid);
+    }
+
+    void PushCurrentToHistory()
+    {
+        int cur = _trackPlaylistCurrentIndex;
+        if (cur >= 0)
+        {
+            pushToHistory(_trackPlaylist.get(cur));
+        }
+    }
 
     // Query Playlist and History
 
@@ -80,7 +99,7 @@ public final class StreamingAudioService
         int i = _trackHistoryCurrentIndex - 1;
         if (i < 0)
             return -1;
-        return _trackHistory.get(i);
+        return peekNth(_trackHistory, i);
     }
 
     private int HistoryPrevTrackUID()
@@ -88,23 +107,43 @@ public final class StreamingAudioService
         int i = _trackHistoryCurrentIndex + 1;
         if (i >= _trackHistory.size())
             return -1;
-        return _trackHistory.get(i);
+        return peekNth(_trackHistory, i);
     }
 
     // Modify Playlist and History
 
-    private int MoveToNextPlaylistTrack() // {TODO} THIS NEEDS TO CHOP OFF THE END OF THE HISTORY BEFORE PUSH
+    private void DropFuture()
+    {
+        if (_trackHistoryCurrentIndex>-1)
+        {
+            for (int i = 0; i < _trackHistoryCurrentIndex; i++)
+            {
+                _trackHistory.pop();
+            }
+            _trackHistoryCurrentIndex = -1;
+        }
+    }
+
+    private int MoveToNextPlaylistTrack()
     {
         int uid = PlaylistNextTrackUID();
         if (uid >=0)
         {
-            int cur = _trackPlaylistCurrentIndex;
-            _trackPlaylistCurrentIndex += 1;
-            if (cur >= 0)
+            // If we were playing from history then we dont want to push the current
+            // track to history as it is already there.
+            boolean wasntPlayingFromHistory = _trackHistoryCurrentIndex == -1;
+
+            // If we were in the history then moving structurally starts making a new
+            // history. This means we drop the future.
+            DropFuture();
+
+            if (wasntPlayingFromHistory)
             {
-                _trackHistory.push(uid);
-                _trackHistoryCurrentIndex = 0;
+                PushCurrentToHistory();
             }
+
+            // Modify our position in the playlist
+            _trackPlaylistCurrentIndex += 1;
         }
         return uid;
     }
@@ -114,29 +153,23 @@ public final class StreamingAudioService
         int uid = PlaylistPrevTrackUID();
         if (uid >=0)
         {
-            int cur = _trackPlaylistCurrentIndex;
+            // If we were playing from history then we dont want to push the current
+            // track to history as it is already there.
+            boolean wasntPlayingFromHistory = _trackHistoryCurrentIndex == -1;
+
+            // If we were in the history then moving structurally starts making a new
+            // history. This means we drop the future.
+            DropFuture();
+
+            if (wasntPlayingFromHistory)
+            {
+                PushCurrentToHistory();
+            }
+
+            // Modify our position in the playlist
             _trackPlaylistCurrentIndex -= 1;
-            _trackHistory.push(uid);
-            _trackHistoryCurrentIndex = 0;
         }
         return uid;
-    }
-
-    private int MoveToIndexedPlaylistTrack(int index)
-    {
-        if (index>=0 && index<_trackPlaylist.size())
-        {
-            int uid = _trackPlaylist.get(index);
-            if (uid >= 0)
-            {
-                int cur = _trackPlaylistCurrentIndex;
-                _trackPlaylistCurrentIndex -= index;
-                _trackHistory.push(uid);
-                _trackHistoryCurrentIndex = 0;
-            }
-            return uid;
-        }
-        return -1;
     }
 
     private int MoveBackInHistory()

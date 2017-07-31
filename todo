@@ -4,17 +4,12 @@
 
 src/Android/StreamingAudioService.java:45:    AndroidPlayerState _state = AndroidPlayerState.Idle; // TODO can we merge this with android's state stuff?
 
-src/Android/StreamingAudioService.java:96:    private int MoveToNextPlaylistTrack() // {TODO} THIS NEEDS TO CHOP OFF THE END OF THE HISTORY BEFORE PUSH
-
-src/Android/StreamingAudioService.java:603:        // {TODO} why stop the service?
-
 src/iOS/LockScreenControls.uno:116:            // {TODO} lower version support
 
 ## debug_log to be removed
 
 - src/Android/StreamingPlayerAndroidImpl.uno:81   how should we communicate OnRejected?
 - src/Android/StreamingPlayerAndroidImpl.uno:165   how should we communicate onServiceDisconnected?
-- src/Track.uno:80 Implement TryConvert so we can use IDs for diffing
 
 ## Testing Driven
 
@@ -22,9 +17,15 @@ src/iOS/LockScreenControls.uno:116:            // {TODO} lower version support
  - click on tracks would be a good start
  - example: tap seem doesnt work, drag does though
 
-- Seems to be possible in some cases to use backward to get to entries from previous playlists..which is itself is fine, but it seemed intermitant and (on android) I jumped back to the first playlist rather that the intermediate tracks. When do tracks get added to the history?
-
 - optional duration? (can't work with streaming ofc)
+
+- iOS warnings:
+  ../../src/Track.uno(11.18): W0000:
+  StreamingPlayer.Track overrides object.Equals(object o) but does not override object.GetHashCode()
+
+- SetPlaylist should add the uids
+
+- add GetPlaylist
 
 ## Done
 
@@ -80,4 +81,7 @@ I: on iOS, when playlist is done we keep getting 'Note' in the logs
 R: At end of playlist we now call Stop()
 
 I: iOS: Add support for local artwork files
+R: -
+
+I: history broken
 R: -
