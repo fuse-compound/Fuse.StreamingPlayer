@@ -42,7 +42,7 @@ public final class StreamingAudioService
     // State
     PlaybackStateCompat.Builder _playbackStateBuilder = new PlaybackStateCompat.Builder();
     MediaMetadataCompat.Builder _metadataBuilder = new MediaMetadataCompat.Builder();
-    AndroidPlayerState _state = AndroidPlayerState.Idle; // TODO can we merge this with android's state stuff?
+    AndroidPlayerState _state = AndroidPlayerState.Idle; // it's not pretty having this duplication but for now this is used when communicating with uno/js
     boolean _prepared = false;
 
     // Uno interaction

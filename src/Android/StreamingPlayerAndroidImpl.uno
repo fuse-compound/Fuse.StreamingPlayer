@@ -82,6 +82,7 @@ namespace StreamingPlayer
         {
             debug_log "StreamingPlayer was not given permissions to play local files: " + e.Message;
             _permittedToPlay = false;
+            Status = PlayerStatus.Error;
         }
 
         static void CreateService()
@@ -162,7 +163,8 @@ namespace StreamingPlayer
                 // Called when the connection with the service disconnects unexpectedly
                 public void onServiceDisconnected(ComponentName className)
                 {
-                    debug_log("Music player handle service disconnection");
+                    debug_log("Music player service disconnection");
+                    @{Status:Set(@{PlayerStatus.Error})};
                 }
             };
             return connection;

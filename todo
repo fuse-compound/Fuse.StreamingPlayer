@@ -2,14 +2,7 @@
 
 ## Comments
 
-src/Android/StreamingAudioService.java:45:    AndroidPlayerState _state = AndroidPlayerState.Idle; // TODO can we merge this with android's state stuff?
-
 src/iOS/LockScreenControls.uno:116:            // {TODO} lower version support
-
-## debug_log to be removed
-
-- src/Android/StreamingPlayerAndroidImpl.uno:81   how should we communicate OnRejected?
-- src/Android/StreamingPlayerAndroidImpl.uno:165   how should we communicate onServiceDisconnected?
 
 ## Testing Driven
 
@@ -85,3 +78,6 @@ R: -
 
 I: history broken
 R: -
+
+I: communicating OnRejected & onServiceDisconnected
+R: log & set Status to Error
