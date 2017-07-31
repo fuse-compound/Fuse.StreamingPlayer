@@ -58,7 +58,16 @@ namespace StreamingPlayer
         [Foreign(Language.ObjC)]
         static ObjC.Object CreateArtworkFromUrl(string url)
         @{
-            UIImage *uiImage = [UIImage imageWithData:[NSData dataWithContentsOfURL: [[NSURL alloc] initWithString: url]]];
+
+            UIImage* uiImage;
+            if ([url hasPrefix:@"http"] || [url hasPrefix:@"https"])
+            {
+                uiImage = [UIImage imageWithData:[NSData dataWithContentsOfURL: [[NSURL alloc] initWithString: url]]];
+            }
+            else
+            {
+                uiImage = [UIImage imageWithData:[[NSFileManager defaultManager] contentsAtPath:url]];
+            }
             if (uiImage != nil) {
                 return [[MPMediaItemArtwork alloc] initWithImage:uiImage];
 

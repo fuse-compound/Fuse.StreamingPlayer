@@ -224,7 +224,6 @@ public final class StreamingAudioService
         int originalUID = _currentTrackUID;
         if (uid >= 0)
         {
-            // Calling with -1 is valid as this is a command to focus no track TODO really?
             try
             {
                 _player.reset();
@@ -252,7 +251,6 @@ public final class StreamingAudioService
 
         if (_currentTrackUID != originalUID && _session!=null)
         {
-            // {TODO} announce track
             _trackPlaylistCurrentIndex = _trackPlaylist.indexOf(_currentTrackUID);
             Track track = _tracks.get(uid);
             Bundle extras = new Bundle();
