@@ -29,16 +29,6 @@ namespace StreamingPlayer
             Duration = duration;
         }
 
-        public override bool Equals(object obj)
-        {
-            var t = obj as Track;
-            return (t != null
-                    && t.UID == UID
-                    && t.Name == Name
-                    && t.Artist == Artist
-                    && t.Url == Url);
-        }
-
         public override string ToString()
         {
             return "Track:" +

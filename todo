@@ -12,7 +12,7 @@ src/iOS/LockScreenControls.uno:116:            // {TODO} lower version support
 
 - optional duration? (can't work with streaming ofc)
 
-- iOS warnings:
+- warnings:
   ../../src/Track.uno(11.18): W0000:
   StreamingPlayer.Track overrides object.Equals(object o) but does not override object.GetHashCode()
 
