@@ -70,8 +70,34 @@ namespace StreamingPlayer
         {
             if (!_initialized)
                 InternalStatusChanged(0);
+
+            HookOntoRawActivityEvents();
+            _initialized = true;
             return true;
         }
+
+        [Foreign(Language.Java)]
+        static void HookOntoRawActivityEvents()
+        @{
+            com.fuse.Activity.SubscribeToLifecycleChange(new com.fuse.Activity.ActivityListener()
+            {
+                @Override public void onStop() {}
+                @Override public void onStart() {}
+                @Override public void onWindowFocusChanged(boolean hasFocus) {}
+                @Override public void onPause() {}
+                @Override public void onResume() {}
+                @Override public void onConfigurationChanged(android.content.res.Configuration config) {}
+                @Override public void onDestroy()
+                {
+                    debug_log("--- shutting down ---");
+                    com.fuse.StreamingPlayer.StreamingAudioService svc = (com.fuse.StreamingPlayer.StreamingAudioService)@{_service:Get()};
+                    if (svc != null)
+                    {
+                        svc.KillNotificationPlayer();
+                    }
+                }
+            });
+        @}
 
         static void OnPermitted(PlatformPermission permission)
         {

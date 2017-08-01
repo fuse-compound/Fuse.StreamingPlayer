@@ -17,6 +17,8 @@ import java.net.URL;
 
 public final class ArtworkMediaNotification
 {
+    static final int ID = 1;
+
     static String _cachedArtworkURL = null;
     static Bitmap _cachedArtwork = null;
 
@@ -149,7 +151,7 @@ public final class ArtworkMediaNotification
 
         // dispatch
         NotificationManager notificationManager = (NotificationManager) _service.getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.notify(1, builder.build());
+        notificationManager.notify(ID, builder.build());
     }
 
     public NotificationCompat.Action generateAction(int icon, String title, int mediaKeyEvent)

@@ -12,7 +12,12 @@
 
 - Test CurrentTrack
 
-- android: killing app doesnt remove notification
+- 
+2017-08-01 15:52:49.608062+0200 StreamingBasics[246:9118] [access]
+This app has crashed because it attempted to access privacy-sensitive
+data without a usage description.  The app's Info.plist must contain
+an NSAppleMusicUsageDescription key with a string value explaining to
+the user how the app uses this data.
 
 ## Done
 
@@ -84,3 +89,6 @@ R: -
 
 I: add GetPlaylist
 R: playlist is now a NativeProperty
+
+I: android: killing app doesnt remove notification
+R: -

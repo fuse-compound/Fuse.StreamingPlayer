@@ -342,7 +342,7 @@ public final class StreamingAudioService
         _audioManager.abandonAudioFocus(this);
         stopNoisyReciever();
         _session.release();
-        NotificationManagerCompat.from(this).cancel(1);
+        NotificationManagerCompat.from(this).cancel(ArtworkMediaNotification.ID);
         super.onDestroy();
     }
 
@@ -446,10 +446,11 @@ public final class StreamingAudioService
         setPlaybackState(newState, _player.getCurrentPosition());
     }
 
-    private void KillNotificationPlayer()
+    public void KillNotificationPlayer()
     {
-        NotificationManager notificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.cancel(1);
+        // NotificationManager notificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+        // notificationManager.cancel(ArtworkMediaNotification.ID);
+        NotificationManagerCompat.from(this).cancel(ArtworkMediaNotification.ID);
     }
 
     private void setPlaybackState(int newState, int position) // PlaybackStateCompat.STATE_YYY
