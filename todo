@@ -9,6 +9,8 @@
 - optional duration? (can't work with streaming ofc)
  - what is the correct 'we dont know' length?
 
+- android: service:660 & 279 move to error state?
+
 - Test CurrentTrack
 
 ## Done

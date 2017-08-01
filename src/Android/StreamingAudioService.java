@@ -276,7 +276,7 @@ public final class StreamingAudioService
             }
             catch (Exception e)
             {
-                Logger.Log("Exception while setting MediaPlayer DataSource");
+                // {TODO} move to error state
             }
         } else {
             _currentTrackUID = -1;
@@ -651,15 +651,13 @@ public final class StreamingAudioService
     @Override
     public void onCompletion(MediaPlayer mp)
     {
-        Logger.Log("Android track completed");
         Next();
     }
 
     @Override
     public boolean onError(MediaPlayer mp, int what, int extra)
     {
-        Logger.Log("Error while mediaplayer in state: " + _state);
-        Logger.Log("We did get an error: what:" + what + ", extra:" + extra);
+        // {TODO} move to error state?
         return true;
     }
 

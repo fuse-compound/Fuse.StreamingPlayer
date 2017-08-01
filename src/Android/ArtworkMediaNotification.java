@@ -77,7 +77,6 @@ public final class ArtworkMediaNotification
             }
             catch (IOException e)
             {
-                Logger.Log("We were not able to get a bitmap of the artwork");
                 return null;
             }
         }
