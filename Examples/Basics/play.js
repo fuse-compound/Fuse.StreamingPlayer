@@ -7,17 +7,17 @@ var tracks = Observable();
 var paramObs = this.Parameter.onValueChanged(module, function(param) {
 	MediaQuery.tracks({ "artist": param["artistID"] }).then(function(tracksArray) {
 		var tmp = tracksArray.map(function(track, index) {
-			return StreamingPlayer.makeTrack({
+			return {
 				"id": index,
 				"name": track["title"],
 				"artist": track["artist"],
 				"url": track["path"],
 				"artworkUrl":"https://everyweeks.com/pZ2j56doGB6c0ykra8lXMj7nuNTDsT79-logo.png",
 				"duration": track["duration"]
-			});
+			};
 		});
 		tracks.addAll(tmp);
-		StreamingPlayer.setPlaylist(tmp);
+		StreamingPlayer.playlist = tmp;
 	}).catch(function(e) {
 		console.log("Well damn:" + e);
 	});

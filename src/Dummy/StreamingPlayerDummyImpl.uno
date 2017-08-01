@@ -21,7 +21,7 @@ namespace StreamingPlayer
         static public event Action<Track> CurrentTrackChanged;
 
         static public bool Init() { return true; }
-        static public void SetPlaylist(Track[] tracks) {}
+        static public void SetPlaylist(List<Track> tracks) {}
         static public void Play() {}
         static public void Pause() {}
         static public void Stop() {}

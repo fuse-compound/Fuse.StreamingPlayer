@@ -1,10 +1,10 @@
-using Fuse;
 using Uno;
 using Uno.UX;
-using Fuse.Scripting;
-using Fuse.Platform;
 using Uno.Collections;
 using Uno.Compiler.ExportTargetInterop;
+using Fuse;
+using Fuse.Platform;
+using Fuse.Scripting;
 
 namespace StreamingPlayer
 {
@@ -14,7 +14,7 @@ namespace StreamingPlayer
 
         static StreamingPlayerModule _instance;
         static bool _playerInitialized;
-
+        static List<Track> _lastPlaylist = new List<Track>();
         static int _playlistLength = 0;
         static Track _currentTrack = null;
 
@@ -30,12 +30,10 @@ namespace StreamingPlayer
                 Marshal.AddConverter(new TrackConverter());
 
             Resource.SetGlobalKey(_instance, "FuseJS/StreamingPlayer");
-            AddMember(new NativeFunction("makeTrack", (NativeCallback)MakeTrack));
             AddMember(new NativeFunction("next", (NativeCallback)Next));
             AddMember(new NativeFunction("previous", (NativeCallback)Previous));
             AddMember(new NativeFunction("backward", (NativeCallback)Backward));
             AddMember(new NativeFunction("forward", (NativeCallback)Forward));
-            AddMember(new NativeFunction("setPlaylist", (NativeCallback)SetPlaylist));
             AddMember(new NativeFunction("play", (NativeCallback)Play));
             AddMember(new NativeFunction("pause", (NativeCallback)Pause));
             AddMember(new NativeFunction("stop", (NativeCallback)Stop));
@@ -46,8 +44,9 @@ namespace StreamingPlayer
             // we let the impl decide how to report this
             AddMember(new NativeProperty<double,double>("duration", GetDuration));
             AddMember(new NativeProperty<double,double>("progress", GetProgress));
-
             AddMember(new NativeProperty<Track,Fuse.Scripting.Object>("currentTrack", GetCurrentTrack, null, Track.ToJSObject));
+            AddMember(new NativeProperty<List<Track>, Fuse.Scripting.Array>("playlist", GetPlaylist, SetPlaylist, ToScriptingArray));
+
 
             var statusChanged = new NativeEvent("statusChanged");
             On("statusChanged", statusChanged);
@@ -83,15 +82,6 @@ namespace StreamingPlayer
             Emit("statusChanged", status.Stringify());
         }
 
-        public object MakeTrack(Context c, object[] args)
-        {
-            if (!_playerInitialized) return null;
-            var jsObject = (Fuse.Scripting.Object)args[0];
-            if (!jsObject.ContainsKey("uid"))
-                jsObject["uid"] = Track.NewUID();
-            return jsObject;
-        }
-
         public object Next(Context c, object[] args)
         {
             if (!_playerInitialized) return null;
@@ -120,10 +110,20 @@ namespace StreamingPlayer
             return null;
         }
 
-        public object SetPlaylist(Context c, object[] args)
+        static Fuse.Scripting.Array ToScriptingArray<T>(Context context, List<T> data)
         {
-            if (!_playerInitialized) return null;
-            var trackArray = args[0] as IArray;
+            var convertedArray = ((IEnumerable<T>)data).OfType<T,object>().ToArray();
+            return context.NewArray(convertedArray);
+        }
+
+        static List<Track> GetPlaylist()
+        {
+            return _lastPlaylist;
+        }
+
+        public void SetPlaylist(Fuse.Scripting.Array trackArray)
+        {
+            if (!_playerInitialized) return;
             if (trackArray != null)
             {
                 List<Track> tracks = new List<Track>();
@@ -135,14 +135,15 @@ namespace StreamingPlayer
                         tracks.Add(track);
                 }
                 _playlistLength = tracks.Count;
-                StreamingPlayer.SetPlaylist(tracks.ToArray());
+                StreamingPlayer.SetPlaylist(tracks);
+                _lastPlaylist = tracks;
             }
             else
             {
                 _playlistLength = 0;
                 StreamingPlayer.SetPlaylist(null);
+                _lastPlaylist = new List<Track>();
             }
-            return null;
         }
 
         PlayerStatus GetStatus()

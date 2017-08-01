@@ -200,7 +200,7 @@ namespace StreamingPlayer
                 _tracks.Add(track.UID, track);
         }
 
-        public static void SetPlaylist(Track[] tracks)
+        public static void SetPlaylist(List<Track> tracks)
         {
             _trackPlaylist.Clear();
 

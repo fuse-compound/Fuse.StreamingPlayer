@@ -33,7 +33,7 @@ namespace StreamingPlayer
         static bool _initialized;
         static bool _permittedToPlay = false;
         static PlayerStatus _status = PlayerStatus.Stopped;
-        static Track[] _pendingPlaylist;
+        static List<Track> _pendingPlaylist;
         static bool _pendingPlay = false;
 
         static public bool IsConnected
@@ -317,7 +317,7 @@ namespace StreamingPlayer
         @}
 
         //int id, string name, string url, string artworkUrl, double duration
-        static public void SetPlaylist(Track[] tracks)
+        static public void SetPlaylist(List<Track> tracks)
         {
             if (tracks!=null)
             {
@@ -326,7 +326,7 @@ namespace StreamingPlayer
 
                 if (IsConnected)
                 {
-                    SetPlaylistImpl(_client, tracks, tracks.Length);
+                    SetPlaylistImpl(_client, tracks, tracks.Count);
                 } else {
                     _pendingPlaylist = tracks;
                 }
@@ -348,7 +348,7 @@ namespace StreamingPlayer
 
         static Java.Object NthToJavaTrack(object boxedArr, int n)
         {
-            var arr = (Track[])boxedArr;
+            var arr = (List<Track>)boxedArr;
             var track = arr[n];
             return ToJavaTrack(track);
         }

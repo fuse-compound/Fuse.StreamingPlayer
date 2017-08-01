@@ -1,9 +1,5 @@
 # Todos
 
-## Comments
-
-src/iOS/LockScreenControls.uno:116:            // {TODO} lower version support
-
 ## Testing Driven
 
 - fix up the example
@@ -12,13 +8,11 @@ src/iOS/LockScreenControls.uno:116:            // {TODO} lower version support
 
 - optional duration? (can't work with streaming ofc)
 
-- warnings:
-  ../../src/Track.uno(11.18): W0000:
-  StreamingPlayer.Track overrides object.Equals(object o) but does not override object.GetHashCode()
+- support lower ios versions - see LockScreenControls.uno:116
 
-- SetPlaylist should add the uids
+- Test CurrentTrack
 
-- add GetPlaylist
+- fuck seek on iOS is broken again
 
 ## Done
 
@@ -81,3 +75,12 @@ R: -
 
 I: communicating OnRejected & onServiceDisconnected
 R: log & set Status to Error
+
+I: Track does not override object.GetHashCode()
+R: -
+
+I: SetPlaylist should add the uids
+R: -
+
+I: add GetPlaylist
+R: playlist is now a NativeProperty
