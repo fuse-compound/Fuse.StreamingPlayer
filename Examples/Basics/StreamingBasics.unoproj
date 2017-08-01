@@ -8,6 +8,11 @@
     "../../../Fuse.MediaQuery/src/Fuse.MediaQuery.unoproj",
     "../../src/Fuse.StreamingPlayer.unoproj",
   ],
+  "iOS": {
+    "PList": {
+      "NSAppleMusicUsageDescription": "Your plausible reasons for being allowed to use the device's features go here"
+    }
+  },
   "Includes": [
     "*",
   ]

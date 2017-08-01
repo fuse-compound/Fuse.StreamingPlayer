@@ -11,14 +11,6 @@
 
 - Test CurrentTrack
 
-- Permissions crash
-  2017-08-01 15:52:49.608062+0200 StreamingBasics[246:9118] [access]
-  This app has crashed because it attempted to access privacy-sensitive
-  data without a usage description.  The app's Info.plist must contain
-  an NSAppleMusicUsageDescription key with a string value explaining to
-  the user how the app uses this data.
- - Seems to happen in mediaquery
-
 ## Done
 
 I: Forward works even when no history
@@ -95,3 +87,6 @@ R: -
 
 I: support lower ios versions
 R: - wont worry about version yet
+
+I: NSAppleMusicUsageDescription Permissions crash
+R: easy to fix by using unoproj plist option in example
