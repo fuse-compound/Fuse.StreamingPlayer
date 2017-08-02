@@ -28,6 +28,14 @@ var backClicked = function() {
 	router.goto("artists");
 };
 
+StreamingPlayer.on("currentTrackChanged", function() {
+	console.log("Track Changed: " + JSON.stringify(StreamingPlayer.currentTrack));
+});
+
+StreamingPlayer.on("statusChanged", function() {
+	console.log("Status Changed: " + JSON.stringify(StreamingPlayer.status));
+});
+
 module.exports = {
 	prevClicked: StreamingPlayer.previous,
 	nextClicked: StreamingPlayer.next,
