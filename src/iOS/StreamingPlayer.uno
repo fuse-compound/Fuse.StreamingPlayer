@@ -47,7 +47,9 @@ namespace StreamingPlayer
         {
             int i = _trackPlaylistCurrentIndex + 1;
             if (i >= _trackPlaylist.Count)
+            {
                 return -1;
+            }
             return _trackPlaylist[i];
         }
 
@@ -55,7 +57,9 @@ namespace StreamingPlayer
         {
             int i = _trackPlaylistCurrentIndex - 1;
             if (i < 0)
+            {
                 return -1;
+            }
             return _trackPlaylist[i];
         }
 
@@ -68,7 +72,9 @@ namespace StreamingPlayer
         {
             int i = _trackHistoryCurrentIndex - 1;
             if (i < 0)
+            {
                 return -1;
+            }
             return HistoryAt(i);
         }
 
@@ -76,7 +82,9 @@ namespace StreamingPlayer
         {
             int i = _trackHistoryCurrentIndex + 1;
             if (i >= _trackHistory.Count)
+            {
                 return -1;
+            }
             return HistoryAt(i);
         }
 
@@ -158,7 +166,9 @@ namespace StreamingPlayer
                 _trackHistoryCurrentIndex += 1;
                 int playlistIndex = _trackPlaylist.IndexOf(uid); // -1 if not found
                 if (playlistIndex >= 0)
+                {
                     _trackPlaylistCurrentIndex = playlistIndex;
+                }
             }
             return uid;
         }
@@ -171,7 +181,9 @@ namespace StreamingPlayer
                 _trackHistoryCurrentIndex -= 1;
                 int playlistIndex = _trackPlaylist.IndexOf(uid); // -1 if not found
                 if (playlistIndex >= 0)
+                {
                     _trackPlaylistCurrentIndex = playlistIndex;
+                }
                 return uid;
             }
             else
@@ -225,7 +237,8 @@ namespace StreamingPlayer
                 track = _tracks[uid];
 
                 Status = PlayerStatus.Loading;
-                if (_player == null){
+                if (_player == null)
+                {
                     _player = Create(track.Url);
                     ObserverProxy.AddObserver(CurrentPlayerItem, _isPlaybackLikelyToKeepUp, 0, OnIsLikelyToKeepUpChanged);
                     ObserverProxy.AddObserver(CurrentPlayerItem, _statusName, 0, OnInternalStateChanged);
@@ -315,12 +328,14 @@ namespace StreamingPlayer
 
         static void OnIsLikelyToKeepUpChanged()
         {
-            if (Status == PlayerStatus.Paused)
-                return;
+            if (Status == PlayerStatus.Paused) return;
+
             var isLikelyToKeepUp = IsLikelyToKeepUp;
-            if (isLikelyToKeepUp) {
+            if (isLikelyToKeepUp)
+            {
                 var rate = GetRate(_player);
-                if (rate < 1.0) {
+                if (rate < 1.0)
+                {
                     Resume();
                 }
                 Status = PlayerStatus.Playing;
@@ -414,8 +429,7 @@ namespace StreamingPlayer
 
         static public void Seek(double toProgress)
         {
-            if (Status == PlayerStatus.Loading)
-                return;
+            if (Status == PlayerStatus.Loading) return;
             var time = Duration * toProgress;
             SetPosition(_player, time);
             NowPlayingInfoCenter.SetProgress(toProgress * Duration);
@@ -442,16 +456,22 @@ namespace StreamingPlayer
                 default: _internalState = iOSPlayerState.Error; break;
             }
             if (_internalState == iOSPlayerState.Initialized && _internalState != lastState)
+            {
                 PlayImpl(_player);
+            }
         }
 
         static void OnStatusChanged()
         {
             if (_internalState == iOSPlayerState.Initialized && Status == PlayerStatus.Stopped)
+            {
                 PlayImpl(_player);
+            }
 
             if (StatusChanged != null)
+            {
                 StatusChanged(Status);
+            }
         }
 
         [Foreign(Language.ObjC)]

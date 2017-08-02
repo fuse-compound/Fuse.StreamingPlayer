@@ -47,7 +47,8 @@ namespace StreamingPlayer
 
             [playInfo setObject: title forKey:MPMediaItemPropertyTitle];
             [playInfo setObject: artistName forKey:MPMediaItemPropertyArtist];
-            if (aw != nil) {
+            if (aw != nil)
+            {
                 [playInfo setObject: aw forKey:MPMediaItemPropertyArtwork];
             }
             [playInfo setObject: [NSNumber numberWithDouble:duration] forKey:MPMediaItemPropertyPlaybackDuration];
@@ -68,9 +69,9 @@ namespace StreamingPlayer
             {
                 uiImage = [UIImage imageWithData:[[NSFileManager defaultManager] contentsAtPath:url]];
             }
-            if (uiImage != nil) {
+            if (uiImage != nil)
+            {
                 return [[MPMediaItemArtwork alloc] initWithImage:uiImage];
-
             }
             return nil;
         @}

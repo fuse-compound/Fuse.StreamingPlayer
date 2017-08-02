@@ -87,7 +87,9 @@ public final class StreamingAudioService
     {
         int i = _trackPlaylistCurrentIndex + 1;
         if (i >= _trackPlaylist.size())
+        {
             return -1;
+        }
         return _trackPlaylist.get(i);
     }
 
@@ -95,7 +97,9 @@ public final class StreamingAudioService
     {
         int i = _trackPlaylistCurrentIndex - 1;
         if (i < 0)
+        {
             return -1;
+        }
         return _trackPlaylist.get(i);
     }
 
@@ -103,7 +107,9 @@ public final class StreamingAudioService
     {
         int i = _trackHistoryCurrentIndex - 1;
         if (i < 0)
+        {
             return -1;
+        }
         return peekNth(_trackHistory, i);
     }
 
@@ -111,7 +117,9 @@ public final class StreamingAudioService
     {
         int i = _trackHistoryCurrentIndex + 1;
         if (i >= _trackHistory.size())
+        {
             return -1;
+        }
         return peekNth(_trackHistory, i);
     }
 
@@ -185,7 +193,9 @@ public final class StreamingAudioService
             _trackHistoryCurrentIndex += 1;
             int playlistIndex = _trackPlaylist.indexOf(uid); // -1 if not found
             if (playlistIndex >= 0)
+            {
                 _trackPlaylistCurrentIndex = playlistIndex;
+            }
         }
         return uid;
     }
@@ -198,7 +208,9 @@ public final class StreamingAudioService
             _trackHistoryCurrentIndex -= 1;
             int playlistIndex = _trackPlaylist.indexOf(uid); // -1 if not found
             if (playlistIndex >= 0)
+            {
                 _trackPlaylistCurrentIndex = playlistIndex;
+            }
             return uid;
         }
         else
@@ -267,7 +279,10 @@ public final class StreamingAudioService
                 _player.reset();
 
                 Track track = _tracks.get(uid);
-                if (track == null) throw new AssertionError();
+                if (track == null)
+                {
+                    throw new AssertionError();
+                }
 
                 _player.setDataSource(track.Url);
 
@@ -282,7 +297,9 @@ public final class StreamingAudioService
             {
                 // {TODO} move to error state
             }
-        } else {
+        }
+        else
+        {
             _currentTrackUID = -1;
         }
 
@@ -517,7 +534,9 @@ public final class StreamingAudioService
             {
                 UpdateMetadata();
                 ArtworkMediaNotification.Notify(track, _session, this, notifIcon, notifText, notifKeycode);
-            } else {
+            }
+            else
+            {
                 KillNotificationPlayer();
             }
         }
@@ -546,7 +565,9 @@ public final class StreamingAudioService
         public void onReceive(Context context, Intent intent)
         {
             if (_player != null && _player.isPlaying())
+            {
                 Pause();
+            }
         }
     };
 
@@ -667,7 +688,9 @@ public final class StreamingAudioService
             case AudioManager.AUDIOFOCUS_LOSS:
             {
                 if (_player.isPlaying())
+                {
                     Stop();
+                }
                 break;
             }
             case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
@@ -678,7 +701,9 @@ public final class StreamingAudioService
             case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
             {
                 if (_player != null)
+                {
                     _player.setVolume(0.3f, 0.3f);
+                }
                 break;
             }
             case AudioManager.AUDIOFOCUS_GAIN:
@@ -686,7 +711,9 @@ public final class StreamingAudioService
                 if (_player != null)
                 {
                     if (!_player.isPlaying())
+                    {
                         Resume();
+                    }
                     _player.setVolume(1.0f, 1.0f);
                 }
                 break;
@@ -833,9 +860,13 @@ public final class StreamingAudioService
         public final double GetCurrentTrackDuration()
         {
             if (_currentTrack != null)
+            {
                 return _currentTrack.Duration;
+            }
             else
+            {
                 return 0;
+            }
         }
     }
 }

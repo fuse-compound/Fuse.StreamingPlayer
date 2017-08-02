@@ -42,8 +42,7 @@ namespace StreamingPlayer
 
         public static Fuse.Scripting.Object ToJSObject(Context c, Track t)
         {
-            if (t == null)
-                return null;
+            if (t == null) return null;
             var obj = c.NewObject();
             obj["uid"] = t.UID;
             obj["name"] = t.Name;

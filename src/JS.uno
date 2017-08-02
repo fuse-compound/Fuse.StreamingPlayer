@@ -40,8 +40,6 @@ namespace StreamingPlayer
             AddMember(new NativeFunction("seek", (NativeCallback)Seek));
 
             AddMember(new NativeProperty<PlayerStatus,string>("status", GetStatus, null, PlayerStatusConverter.Convert));
-
-            // we let the impl decide how to report this
             AddMember(new NativeProperty<double,double>("duration", GetDuration));
             AddMember(new NativeProperty<double,double>("progress", GetProgress));
             AddMember(new NativeProperty<Track,Fuse.Scripting.Object>("currentTrack", GetCurrentTrack, null, Track.ToJSObject));

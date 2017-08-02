@@ -19,7 +19,9 @@ extern(iOS) public static class ObserverProxy
     static void OnCallback(string keyPath)
     {
         if (_observers.ContainsKey(keyPath))
+        {
             _observers[keyPath]();
+        }
     }
 
     public static void AddObserver(ObjC.Object target, string keyPath, int options, Action callback)

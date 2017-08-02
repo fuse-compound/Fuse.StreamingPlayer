@@ -169,9 +169,13 @@ namespace StreamingPlayer
                             @Override public void OnCurrentTrackChanged(Track track)
                             {
                                 if (track!=null)
+                                {
                                     @{StreamingPlayer.OnCurrentTrackChanged(Track):Call(@{Track(int, string, string, string, string, double):New(track.UID, track.Name, track.Artist, track.Url, track.ArtworkUrl, track.Duration)})};
+                                }
                                 else
+                                {
                                     @{StreamingPlayer.OnCurrentTrackChanged(Track):Call(null)};
+                                }
                             }
                             @Override public void OnInternalStatusChanged(int i)
                             {
@@ -254,14 +258,18 @@ namespace StreamingPlayer
         static public void Play()
         {
             if (_service == null)
+            {
                 CreateService();
+            }
 
             if (IsConnected)
             {
                 Status = PlayerStatus.Loading;
                 PlayImpl(_client);
                 _pendingPlay = false;
-            } else {
+            }
+            else
+            {
                 _pendingPlay = true;
             }
         }
@@ -281,7 +289,9 @@ namespace StreamingPlayer
                 _pendingPlaylist = null;
             }
             if (_pendingPlay)
+            {
                 Play();
+            }
         }
 
         static public void Seek(double toProgress)
@@ -352,12 +362,16 @@ namespace StreamingPlayer
             if (tracks!=null)
             {
                 if (_service == null)
+                {
                     CreateService();
+                }
 
                 if (IsConnected)
                 {
                     SetPlaylistImpl(_client, tracks, tracks.Count);
-                } else {
+                }
+                else
+                {
                     _pendingPlaylist = tracks;
                 }
             }
@@ -397,25 +411,33 @@ namespace StreamingPlayer
         static public void Next()
         {
             if (IsConnected)
+            {
                 NextImpl(_client);
+            }
         }
 
         static public void Previous()
         {
             if (IsConnected)
+            {
                 PreviousImpl(_client);
+            }
         }
 
         static public void Forward()
         {
             if (IsConnected)
+            {
                 ForwardImpl(_client);
+            }
         }
 
         static public void Backward()
         {
             if (IsConnected)
+            {
                 BackwardImpl(_client);
+            }
         }
 
         [Foreign(Language.Java)]

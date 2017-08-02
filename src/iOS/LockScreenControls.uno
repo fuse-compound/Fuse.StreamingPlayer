@@ -29,17 +29,25 @@ namespace StreamingPlayer
         static void OnHasPreviousChanged(bool has)
         {
             if (has)
+            {
                 ShowPreviousButton();
+            }
             else
+            {
                 HidePreviousButton();
+            }
         }
 
         static void OnHasNextChanged(bool has)
         {
             if (has)
+            {
                 ShowNextButton();
+            }
             else
+            {
                 HideNextButton();
+            }
         }
 
         static void Next()
@@ -65,7 +73,9 @@ namespace StreamingPlayer
         {
             var duration = StreamingPlayer.Duration;
             if (duration == 0.0)
+            {
                 return;
+            }
             var progress = posInSec / duration;
             StreamingPlayer.Seek(progress);
         }
