@@ -1,6 +1,5 @@
 package com.fuse.StreamingPlayer;
 
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -42,11 +41,17 @@ public final class StreamingAudioService
     // State
     PlaybackStateCompat.Builder _playbackStateBuilder = new PlaybackStateCompat.Builder();
     MediaMetadataCompat.Builder _metadataBuilder = new MediaMetadataCompat.Builder();
-    AndroidPlayerState _state = AndroidPlayerState.Idle; // it's not pretty having this duplication but for now this is used when communicating with uno/js
     boolean _prepared = false;
 
     // Uno interaction
     StreamingAudioClient _streamingAudioClient;
+
+    private int CurrentPlaybackState()
+    {
+        PlaybackStateCompat currentState = _session.getController().getPlaybackState();
+        if (currentState == null) return PlaybackStateCompat.STATE_NONE;
+        return currentState.getState();
+    }
 
     //--------------------------
 
@@ -260,7 +265,6 @@ public final class StreamingAudioService
             try
             {
                 _player.reset();
-                _state = AndroidPlayerState.Initialized;
 
                 Track track = _tracks.get(uid);
                 if (track == null) throw new AssertionError();
@@ -456,8 +460,7 @@ public final class StreamingAudioService
     private void setPlaybackState(int newState, int position) // PlaybackStateCompat.STATE_YYY
     {
         // Vars we can mutate for result
-        AndroidPlayerState oldUnoState = _state;
-        AndroidPlayerState unoState;
+        int oldState = CurrentPlaybackState();
         int notifKeycode = -1;
         int notifIcon = -1;
         String notifText = "<invalid>";
@@ -469,12 +472,10 @@ public final class StreamingAudioService
         {
             case PlaybackStateCompat.STATE_STOPPED:
             {
-                unoState = AndroidPlayerState.Idle;
                 break;
             }
             case PlaybackStateCompat.STATE_PAUSED:
             {
-                unoState = AndroidPlayerState.Paused;
                 notifKeycode = KeyEvent.KEYCODE_MEDIA_PLAY;
                 notifIcon = android.R.drawable.ic_media_play;
                 notifText = "MakeTrackCurrentByUID";
@@ -482,12 +483,10 @@ public final class StreamingAudioService
             }
             case PlaybackStateCompat.STATE_BUFFERING:
             {
-                unoState = AndroidPlayerState.Preparing;
                 break;
             }
             case PlaybackStateCompat.STATE_PLAYING:
             {
-                unoState = AndroidPlayerState.Started;
                 notifIcon = android.R.drawable.ic_media_pause;
                 notifText = "Pause";
                 notifKeycode = KeyEvent.KEYCODE_MEDIA_PAUSE;
@@ -524,10 +523,9 @@ public final class StreamingAudioService
         }
 
         // and uno
-        if (unoState != oldUnoState)
+        if (newState != oldState)
         {
-            _state = unoState;
-            _streamingAudioClient.OnInternalStatusChanged(unoState.toInt());
+            _streamingAudioClient.OnInternalStatusChanged(newState);
         }
     }
 
@@ -593,7 +591,7 @@ public final class StreamingAudioService
         {
             _player.seekTo(milliseconds);
             // We dont use our setPlaybackState as we don't want to touch the notification
-            int currentState = (int)_session.getController().getPlaybackState().getState();
+            int currentState = CurrentPlaybackState();
             _playbackStateBuilder.setState(currentState, _player.getCurrentPosition(), 1f);
             _session.setPlaybackState(_playbackStateBuilder.build());
         }
@@ -621,7 +619,7 @@ public final class StreamingAudioService
 
     private void Pause()
     {
-        if (_state == AndroidPlayerState.Started)
+        if (CurrentPlaybackState() == PlaybackStateCompat.STATE_PLAYING)
         {
             _player.pause();
             setPlaybackState(PlaybackStateCompat.STATE_PAUSED);

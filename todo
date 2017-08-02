@@ -13,6 +13,8 @@
 
 - Test CurrentTrack
 
+- Test State
+
 ## Done
 
 I: Forward works even when no history
@@ -92,3 +94,6 @@ R: - wont worry about version yet
 
 I: NSAppleMusicUsageDescription Permissions crash
 R: easy to fix by using unoproj plist option in example
+
+I: Simplify AndroidPlayerState situation
+R: Removed it and now use PlaybackStateCompat instead

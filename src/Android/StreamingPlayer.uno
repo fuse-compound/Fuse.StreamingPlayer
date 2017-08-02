@@ -9,6 +9,7 @@ using Uno.Compiler.ExportTargetInterop;
 namespace StreamingPlayer
 {
     [ForeignInclude(Language.Java,
+                    "android.support.v4.media.session.PlaybackStateCompat",
                     "com.fuse.StreamingPlayer.StreamingAudioService",
                     "com.fuse.StreamingPlayer.Track",
                     "java.lang.Exception",
@@ -58,8 +59,11 @@ namespace StreamingPlayer
             {
                 var last = _status;
                 _status = value;
-                if (last != value)
-                    OnStatusChanged();
+
+                if (last != value && StatusChanged != null)
+                {
+                    StatusChanged(Status);
+                }
             }
         }
 
@@ -69,7 +73,9 @@ namespace StreamingPlayer
         static public bool Init()
         {
             if (!_initialized)
-                InternalStatusChanged(0);
+            {
+                Status = PlayerStatus.Stopped;
+            }
 
             HookOntoRawActivityEvents();
             _initialized = true;
@@ -202,50 +208,48 @@ namespace StreamingPlayer
         static public event Action<Track> CurrentTrackChanged;
         static public event StatusChangedHandler StatusChanged;
 
-        static void OnStatusChanged()
-        {
-            if (StatusChanged != null)
-                StatusChanged(Status);
-        }
-
         static void OnCurrentTrackChanged(Track track)
         {
             CurrentTrackChanged(track);
         }
 
-        static void InternalStatusChanged(int i)
-        {
-            // mapping the enum in AndroidPlayerState.java to uno
-            switch (i)
+        [Foreign(Language.Java)]
+        static void InternalStatusChanged(int newState)
+        @{
+            switch (newState)
             {
-                case 0:
-                case 1:
-                    Status = PlayerStatus.Stopped;
+                case PlaybackStateCompat.STATE_NONE:
+                {
+                    @{Status:Set(@{PlayerStatus.Stopped})};
                     break;
-                case 2:
-                case 3:
-                    Status = PlayerStatus.Loading;
+                }
+                case PlaybackStateCompat.STATE_STOPPED:
+                {
+                    @{Status:Set(@{PlayerStatus.Stopped})};
                     break;
-                case 4:
-                    Status = PlayerStatus.Playing;
+                }
+                case PlaybackStateCompat.STATE_PAUSED:
+                {
+                    @{Status:Set(@{PlayerStatus.Paused})};
                     break;
-                case 5:
-                    Status = PlayerStatus.Stopped;
+                }
+                case PlaybackStateCompat.STATE_BUFFERING:
+                {
+                    @{Status:Set(@{PlayerStatus.Loading})};
                     break;
-                case 6:
-                    Status = PlayerStatus.Paused;
+                }
+                case PlaybackStateCompat.STATE_PLAYING:
+                {
+                    @{Status:Set(@{PlayerStatus.Playing})};
                     break;
-                case 7:
-                    Status = PlayerStatus.Stopped;
+                }
+                default:
+                {
+                    @{Status:Set(@{PlayerStatus.Error})};
                     break;
-                case 8:
-                    Status = PlayerStatus.Error;
-                    break;
-                case 9:
-                    Status = PlayerStatus.Stopped;
-                    break;
+                }
             }
-        }
+        @}
 
         static public void Play()
         {
