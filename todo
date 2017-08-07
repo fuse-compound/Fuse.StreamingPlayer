@@ -11,6 +11,8 @@
 
 - android: service:660 & 279 move to error state?
 
+- iOS: backward to beginning of history can result in only playing first track and stopping. Not sure why
+
 ## Done
 
 I: Forward works even when no history
