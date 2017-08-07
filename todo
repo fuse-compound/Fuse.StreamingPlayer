@@ -13,7 +13,14 @@
 
 - Test CurrentTrack
 
-- Test State
+- iOS State Issue:
+ - Always reuse the player, new player should happen only once
+ - Consolidate Add/Remove Observer logic in one place
+ - Track the Observed things so we can always unobserve correctly
+ - Test shit still works
+ - Move Status modifying logic into OnInternalStateChanged. Make Status dumb
+ - 
+ 
 
 ## Done
 
