@@ -11,17 +11,6 @@
 
 - android: service:660 & 279 move to error state?
 
-- Test CurrentTrack
-
-- iOS State Issue:
- - Always reuse the player, new player should happen only once
- - Consolidate Add/Remove Observer logic in one place
- - Track the Observed things so we can always unobserve correctly
- - Test shit still works
- - Move Status modifying logic into OnInternalStateChanged. Make Status dumb
- - 
- 
-
 ## Done
 
 I: Forward works even when no history
@@ -104,3 +93,9 @@ R: easy to fix by using unoproj plist option in example
 
 I: Simplify AndroidPlayerState situation
 R: Removed it and now use PlaybackStateCompat instead
+
+I: iOS - Always reuse the player, new player should happen only once
+R: -
+
+I: iOS - Consolidate Add/Remove Observer logic (Track the Observed things)
+R: -

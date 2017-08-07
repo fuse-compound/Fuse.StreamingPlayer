@@ -90,33 +90,23 @@ namespace StreamingPlayer
         {
             get
             {
-                if (_player != null)
-                {
-                    switch (_internalState)
-                    {
-                        case iOSPlayerState.Unknown:
-                            return PlayerStatus.Stopped;
-                        case iOSPlayerState.Initialized:
-                            return _status;
-                        default:
-                            return PlayerStatus.Error;
-                    }
-                }
-                return PlayerStatus.Error;
+                return _status;
             }
             private set
             {
                 var orig = Status;
                 _status = value;
 
-                if (_internalState == iOSPlayerState.Initialized && Status == PlayerStatus.Stopped)
+                if (_internalState == iOSPlayerState.Initialized
+                    && (_internalState == iOSPlayerState.Unknown || Status == PlayerStatus.Stopped))
                 {
                     PlayImpl(_player);
                 }
 
-                if (StatusChanged != null && (Status != orig))
+                var handler = StatusChanged;
+                if (handler != null && (Status != orig))
                 {
-                    StatusChanged(Status);
+                    handler(Status);
                 }
             }
         }
@@ -317,22 +307,28 @@ namespace StreamingPlayer
             if (_currentTrackUID != originalUID)
             {
                 Playlist.SetPlaylistCurrent(_currentTrackUID);
-                CurrentTrackChanged(track);
+                var handler = CurrentTrackChanged;
+                if (handler != null)
+                {
+                    handler(track);
+                }
                 OnHasNextOrHasPreviousChanged();
             }
         }
 
         static void OnHasNextOrHasPreviousChanged()
         {
-            if (HasNextChanged != null)
+            var handler0 = HasNextChanged;
+            if (handler0 != null)
             {
                 var hasNext = Playlist.PlaylistNextTrackUID() > -1;
-                HasNextChanged(hasNext);
+                handler0(hasNext);
             }
-            if (HasPreviousChanged != null)
+            var handler1 = HasPreviousChanged;
+            if (handler1 != null)
             {
                 var hasPrev = Playlist.PlaylistPrevTrackUID() > -1;
-                HasPreviousChanged(hasPrev);
+                handler1(hasPrev);
             }
         }
 
