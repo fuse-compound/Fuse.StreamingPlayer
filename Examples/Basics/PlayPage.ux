@@ -6,7 +6,7 @@
             <StackPanel>
                 <Each Items="{tracks}">
                     <DockPanel Padding="10" Margin="0,1" Background="#fff">
-                        <Text Value="{name}" />
+                        <Text Value="{name}" Clicked="{itemClicked}"/>
                     </DockPanel>
                 </Each>
             </StackPanel>

@@ -38,6 +38,7 @@ namespace StreamingPlayer
             AddMember(new NativeFunction("pause", (NativeCallback)Pause));
             AddMember(new NativeFunction("stop", (NativeCallback)Stop));
             AddMember(new NativeFunction("seek", (NativeCallback)Seek));
+            AddMember(new NativeFunction("switchTrack", (NativeCallback)SwitchTrack));
 
             AddMember(new NativeProperty<PlayerStatus,string>("status", GetStatus, null, PlayerStatusConverter.Convert));
             AddMember(new NativeProperty<double,double>("duration", GetDuration));
@@ -78,6 +79,14 @@ namespace StreamingPlayer
         void OnStatusChanged(PlayerStatus status)
         {
             Emit("statusChanged", status.Stringify());
+        }
+
+        public object SwitchTrack(Context c, object[] args)
+        {
+            if (!_playerInitialized) return null;
+            var track = Marshal.ToType<Track>(args[0]);
+            StreamingPlayer.SwitchTrack(track);
+            return null;
         }
 
         public object Next(Context c, object[] args)

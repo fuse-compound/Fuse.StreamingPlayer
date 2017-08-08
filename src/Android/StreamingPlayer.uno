@@ -440,6 +440,14 @@ namespace StreamingPlayer
             }
         }
 
+        static public void SwitchTrack(Track track)
+        {
+            if (IsConnected)
+            {
+                SwitchTrackImpl(_client, track.UID);
+            }
+        }
+
         [Foreign(Language.Java)]
         static void NextImpl(Java.Object client)
         @{
@@ -466,6 +474,13 @@ namespace StreamingPlayer
         @{
             StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
             sClient.Forward();
+        @}
+
+        [Foreign(Language.Java)]
+        static void SwitchTrackImpl(Java.Object client, int uid)
+        @{
+            StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
+            sClient.SwitchTrack(uid);
         @}
     }
 }

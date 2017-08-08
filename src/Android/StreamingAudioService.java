@@ -137,6 +137,34 @@ public final class StreamingAudioService
         }
     }
 
+    private int SetCurrentPlaylistTrack(int trackUID)
+    {
+
+        int index = _trackPlaylist.indexOf(trackUID);
+        if (index > -1)
+        {
+            // If we were playing from history then we dont want to push the current
+            // track to history as it is already there.
+            boolean wasntPlayingFromHistory = _trackHistoryCurrentIndex == -1;
+
+            // If we were in the history then moving structurally starts making a new
+            // history. This means we drop the future.
+            DropFuture();
+
+            if (wasntPlayingFromHistory)
+            {
+                PushCurrentToHistory();
+            }
+
+            _trackPlaylistCurrentIndex = index;
+            return trackUID;
+        }
+        else
+        {
+            return -1;
+        }
+    }
+
     private int MoveToNextPlaylistTrack()
     {
         int uid = PlaylistNextTrackUID();
@@ -443,6 +471,11 @@ public final class StreamingAudioService
                 {
                     Backward();
                 }
+                else if (action.equals("SwitchTrack"))
+                {
+                    int uid = extras.getInt("uid");
+                    SwitchTrack(uid);
+                }
             }
         });
 
@@ -667,6 +700,15 @@ public final class StreamingAudioService
         MakeTrackCurrentByUID(-1);
     }
 
+    private void SwitchTrack(int uid)
+    {
+        int validatedUID = SetCurrentPlaylistTrack(uid);
+        if (validatedUID > -1)
+        {
+            MakeTrackCurrentByUID(validatedUID);
+        }
+    }
+
     //
     // Events
     //
@@ -753,7 +795,6 @@ public final class StreamingAudioService
         return _binder;
     }
 
-
     @Override
     public boolean onUnbind(Intent intent)
     {
@@ -815,6 +856,13 @@ public final class StreamingAudioService
         public final void Seek(long position)
         {
             _controller.getTransportControls().seekTo(position);
+        }
+
+        public final void SwitchTrack(int uid)
+        {
+            Bundle bTrack = new Bundle();
+            bTrack.putInt("uid", uid);
+            _controller.getTransportControls().sendCustomAction("SwitchTrack", bTrack);
         }
 
         public final double GetCurrentPosition()

@@ -20,8 +20,6 @@
 
 - add clear history
 
-- add 'set current track'
-
 ## Done
 
 I: Forward works even when no history
@@ -117,3 +115,5 @@ R: backward could return -1 and we would then set this as the current track (mea
 I: fix get playlist
 R: -
 
+I: add 'set current track'
+R: -

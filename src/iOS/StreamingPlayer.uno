@@ -182,6 +182,15 @@ namespace StreamingPlayer
             }
         }
 
+        static public void SwitchTrack(Track track)
+        {
+            var uid = Playlist.SetCurrentPlaylistTrack(track.UID);
+            if (uid > -1)
+            {
+                MakeTrackCurrentByUID(uid);
+            }
+        }
+
         static public void Seek(double toProgress)
         {
             if (Status == PlayerStatus.Loading) return;

@@ -208,5 +208,33 @@ namespace StreamingPlayer
 
             SetPlaylistCurrent(currentTrackUID);
         }
+
+        public static int SetCurrentPlaylistTrack(int trackUID)
+        {
+
+            int index = _trackPlaylist.IndexOf(trackUID);
+            if (index > -1)
+            {
+                // If we were playing from history then we dont want to push the current
+                // track to history as it is already there.
+                bool wasntPlayingFromHistory = _trackHistoryCurrentIndex == -1;
+
+                // If we were in the history then moving structurally starts making a new
+                // history. This means we drop the future.
+                DropFuture();
+
+                if (wasntPlayingFromHistory)
+                {
+                    PushCurrentToHistory();
+                }
+
+                _trackPlaylistCurrentIndex = index;
+                return trackUID;
+            }
+            else
+            {
+                return -1;
+            }
+        }
     }
 }

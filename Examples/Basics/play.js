@@ -16,12 +16,18 @@ var paramObs = this.Parameter.onValueChanged(module, function(param) {
 				"duration": track["duration"]
 			};
 		});
-		tracks.addAll(tmp);
 		StreamingPlayer.playlist = tmp;
+		tracks.addAll(StreamingPlayer.playlist);
 	}).catch(function(e) {
 		console.log("Well damn:" + e);
 	});
 });
+
+var itemClicked = function(item) {
+	var track = item["data"];
+	console.log("Foo?: " + JSON.stringify(track));
+	StreamingPlayer.switchTrack(track);
+};
 
 var backClicked = function() {
 	StreamingPlayer.stop();
@@ -45,6 +51,7 @@ module.exports = {
 	backClicked: backClicked,
 	playClicked: StreamingPlayer.play,
 	pauseClicked: StreamingPlayer.pause,
+	itemClicked: itemClicked,
 
 	tracks: tracks
 };
