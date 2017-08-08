@@ -16,7 +16,11 @@
   Hmm I think we can just use forward always. As then when in history it just works and
   when there is no history then it uses the playlist. Cool!
 
-- Set current track...doesnt exists :|
+- ios: double play on switch track
+
+- add clear history
+
+- add 'set current track'
 
 ## Done
 
