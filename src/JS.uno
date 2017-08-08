@@ -43,7 +43,7 @@ namespace StreamingPlayer
             AddMember(new NativeProperty<double,double>("duration", GetDuration));
             AddMember(new NativeProperty<double,double>("progress", GetProgress));
             AddMember(new NativeProperty<Track,Fuse.Scripting.Object>("currentTrack", GetCurrentTrack, null, Track.ToJSObject));
-            AddMember(new NativeProperty<List<Track>, Fuse.Scripting.Array>("playlist", GetPlaylist, SetPlaylist, ToScriptingArray));
+            AddMember(new NativeProperty<List<Track>, Fuse.Scripting.Array>("playlist", GetPlaylist, SetPlaylist, ToJSTrackArray));
 
 
             var statusChanged = new NativeEvent("statusChanged");
@@ -108,10 +108,14 @@ namespace StreamingPlayer
             return null;
         }
 
-        static Fuse.Scripting.Array ToScriptingArray<T>(Context context, List<T> data)
+        static Fuse.Scripting.Array ToJSTrackArray(Context c, List<Track> data)
         {
-            var convertedArray = ((IEnumerable<T>)data).OfType<T,object>().ToArray();
-            return context.NewArray(convertedArray);
+            var arr = (Fuse.Scripting.Array)c.Evaluate("(no file)", "new Array(" + data.Count + ")");
+            for (int i = 0; i < data.Count; i++)
+            {
+                arr[i] = Track.ToJSObject(c, data[i]);
+            }
+            return arr;
         }
 
         static List<Track> GetPlaylist()

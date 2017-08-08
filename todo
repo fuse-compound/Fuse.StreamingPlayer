@@ -16,6 +16,8 @@
   Hmm I think we can just use forward always. As then when in history it just works and
   when there is no history then it uses the playlist. Cool!
 
+- Set current track...doesnt exists :|
+
 ## Done
 
 I: Forward works even when no history
@@ -66,7 +68,7 @@ R: -
 I: android artwork caching
 R: dirt simple but will do the job for now.
 
-I: on iOS, when playlist is done we keep getting 'Note' in the logs
+I: on iOS, when playlist is done we keep getting 'Note' in the logs	
 R: At end of playlist we now call Stop()
 
 I: iOS: Add support for local artwork files
@@ -107,3 +109,7 @@ R: -
 
 I: iOS: backward to beginning of history can result in only playing first track and stopping.
 R: backward could return -1 and we would then set this as the current track (meaning no next track)
+
+I: fix get playlist
+R: -
+
