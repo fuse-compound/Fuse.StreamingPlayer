@@ -1,28 +1,103 @@
-# WARNING WIP
-
-I'm still actively working on this, there are bugs on both targets. I need to take a quick detour to make a media query library before I can come back and finish this.
-
 # Fuse.StreamingPlayer
 
-This is a player that can work on both http & local audio files. It's intended purpose is for playback of music.
+This is a simple music player for iOS & Android. It supports local & remotes files and lockscreen controls for both platforms.
 
-It supports:
-- playback even when the app is in the background
-- Lock screen controls
-    - Normal lock screen controls on iOS
-    - MediaStyle notification for Android
-    - Displays media metadata
-        - Track title
-        - Artist
-        - Artwork
-        - Duration
-        - Progress
-- Allows you to supply a full playlist of tracks from JS
+The player runs in a service meaning that it keeps working when your app is in the background.
 
-## JS API
-It exposes a JavaScript API called `StreamingPlayer` which is reachable by `require('StreamingPlayer')`. I'll fill this section in when I've finished this (see the big ol' warning at the top :p) You can also look at the [example](./Examples/Basics/play.js) to see where we are going with this.
+There are three main concepts to remember when using this library: Tracks, The Playlist & History.
 
-## Limitations
+## Tracks
 
-- Only supports Android API level >= 21. Earlier API levels used a different system for lock screen media controls, which have not been wrapped yet.
-- A few notification related callbacks have not yet been wrapped (like the clicked and removed actions).
+Tracks are simple JS objects that have at least the following:
+
+```
+{
+    "url": "...",       // http or https url OR path to local file
+    "duration": 140.0   // duration of track in seconds
+}
+```
+
+You may optionally provide more info:
+
+```
+{
+    "url": "..."
+    "duration": 140.0
+    "name": "someTrackName",   // name of track
+    "artist": "someArtistName" // name of artist
+    "artworkUrl": "..."        // http or https url OR path to local file
+}
+```
+This is optional but is used for the system's audio or lockscreen controls.
+
+*TIP:* If you are not sure how to get this info for local file one option is [Fuse.MediaQuery](https://github.com/fuse-compound/Fuse.MediaQuery). The example in `Examples/Basics/` shows `Fuse.StreamingPlayer` being used in combination with `Fuse.MediaQuery`
+
+## The Playlist
+
+`Fuse.StreamingPlayer` has a playlist which is a simple JS array or `Track`s. You can set it like this
+
+```
+var Player = require("FuseJS/StreamingPlayer");
+Player.playlist = [{ "url": "a.mp3", "duration": 140.0, .. }, { "url": "b.mp3", "duration": 200.0, .. }];
+```
+
+When you do this a *very* important transformation is done to the tracks, each one is given a unique identifier. The unique identifier (UID) is a number that will be stored in the `uid` property on the track. So, for example, the playlist in the example above will now contain tracks like this:
+
+```
+[
+    { "uid": 22, "url": "a.mp3", "duration": 140.0, .. },
+    { "uid": 30, "url": "b.mp3", "duration": 200.0, .. }
+]
+```
+
+The UIDs *may* be sequential but *do not* rely on this! The reason for the UID is that, when you modify the playlist it allows the player to easily see what has changed. It can then send this info the background service that is doing the actual playback. This is why this library doesnt need to have `appendTrack`, `prependTrack`, `insertTrack`, etc. You simple make a regular old javascript array and set `Player.playlist` to that array.
+
+## History
+
+There are two ways to navigate through your tracks. Through the playlist & through history.
+
+When you use `next()` & `previous()` you will move forward and backwards through your playlist. In fancy terms we are moving structurally.
+
+When you use `forward()` & `backward()` you will move through the playback history. In fancy terms again, we are moving temporally.
+
+Lets imagine we have a playlist of tracks `a.mp3`, `b.mp3`, `c.mp3` & `d.mp3` in that order:
+
+First you play `c.mp3`, then `d.mp3`, then `b.mp3`
+
+If you called `previous()` at this point it will play `a.mp3`, as `a.mp3` is the next track before `b.mp3`in the playlist.
+
+If you called `backward()` at this point it will play `d.mp3`, as `d.mp3` is the next track you played before playing `b.mp3`
+
+There is no *correct* choice for how your music player should behave so we provide both.
+
+An interesting behavior is that, by default, you can play tracks that are no longer in your current playlist using `backward()`. If you dont want this behaviour then be sure to call `clearHistory()` before setting your new playlist.
+
+## API
+
+Finally here are the functions, properties and events provided by `Fuse.StreamingPlayer`:
+
+- WIP -
+
+// functions
+next
+previous
+backward
+forward
+play
+pause
+stop
+seek
+switchTrack
+clearHistory
+
+// properties
+status
+duration
+progress
+currentTrack
+playlist
+
+
+// events
+statusChanged
+currentTrackChanged
