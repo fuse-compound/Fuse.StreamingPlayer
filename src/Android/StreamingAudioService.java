@@ -635,7 +635,11 @@ public final class StreamingAudioService
 
     private void Backward()
     {
-        MakeTrackCurrentByUID(MoveBackInHistory());
+        int uid = MoveBackInHistory();
+        if (uid > -1)
+        {
+            MakeTrackCurrentByUID(uid);
+        }
     }
 
     private void Pause()

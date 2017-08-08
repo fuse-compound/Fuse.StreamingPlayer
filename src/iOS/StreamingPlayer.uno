@@ -175,7 +175,11 @@ namespace StreamingPlayer
 
         public static void Backward()
         {
-            MakeTrackCurrentByUID(Playlist.MoveBackInHistory());
+            var uid = Playlist.MoveBackInHistory();
+            if (uid > -1)
+            {
+                MakeTrackCurrentByUID(uid);
+            }
         }
 
         static public void Seek(double toProgress)
@@ -232,7 +236,6 @@ namespace StreamingPlayer
                 }
             }
         }
-
 
         [Foreign(Language.ObjC)]
         static ObjC.Object CurrentPlayerItem
