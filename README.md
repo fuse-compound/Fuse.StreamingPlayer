@@ -20,7 +20,7 @@ It supports:
 - Allows you to supply a full playlist of tracks from JS
 
 ## JS API
-It exposes a JavaScript API called `PlaylistPlayer` which is reachable by `require('PlaylistPlayer')`. I'll fill this section in when I've finished this (see the big ol' warning at the top :p) You can also look at the [example](./Examples/Basics/MainView.js) to see where we are going with this.
+It exposes a JavaScript API called `StreamingPlayer` which is reachable by `require('StreamingPlayer')`. I'll fill this section in when I've finished this (see the big ol' warning at the top :p) You can also look at the [example](./Examples/Basics/play.js) to see where we are going with this.
 
 ## Limitations
 

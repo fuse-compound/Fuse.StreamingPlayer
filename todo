@@ -2,13 +2,14 @@
 
 ## Testing Driven
 
-
- - example: tap seem doesnt work, drag does though
+- example: tap seek bar doesnt work.
 
 - optional duration? (can't work with streaming ofc)
  - what is the correct 'we dont know' length?
 
 - android: service:660 & 279 move to error state?
+
+- add control of what lockscreen controls do?
 
 ## Done
 
