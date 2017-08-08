@@ -720,7 +720,7 @@ public final class StreamingAudioService
     @Override
     public void onCompletion(MediaPlayer mp)
     {
-        Next();
+        Forward();
     }
 
     @Override

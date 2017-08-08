@@ -2,19 +2,13 @@
 
 ## Testing Driven
 
-- fix up the example
- - click on tracks would be a good start
+
  - example: tap seem doesnt work, drag does though
 
 - optional duration? (can't work with streaming ofc)
  - what is the correct 'we dont know' length?
 
 - android: service:660 & 279 move to error state?
-
-- When we are playing from history the next track should be from history, not playlist.
-  Do we do this?
-  Hmm I think we can just use forward always. As then when in history it just works and
-  when there is no history then it uses the playlist. Cool!
 
 ## Done
 
@@ -119,3 +113,9 @@ R: -
 
 I: ios - double play on switch track
 R: two issues, playimpl in set status & bad use of status from JS
+
+I: At end of track go forward rather than next. This gives better handing of history
+R: -
+
+I: Example - click on tracks
+R: -

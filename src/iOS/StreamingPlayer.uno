@@ -231,7 +231,7 @@ namespace StreamingPlayer
             {
                 if (Playlist.PlaylistNextTrackUID() > -1)
                 {
-                    Next();
+                    Forward();
                 }
                 else
                 {
