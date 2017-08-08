@@ -31,5 +31,6 @@ namespace StreamingPlayer
         static public void Backward() {}
         static public void Forward() {}
         static public void SwitchTrack(Track track) {}
+        static public void ClearHistory() {}
     }
 }

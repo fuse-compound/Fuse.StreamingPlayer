@@ -471,6 +471,10 @@ public final class StreamingAudioService
                 {
                     Backward();
                 }
+                else if (action.equals("ClearHistory"))
+                {
+                    ClearHistory();
+                }
                 else if (action.equals("SwitchTrack"))
                 {
                     int uid = extras.getInt("uid");
@@ -888,6 +892,11 @@ public final class StreamingAudioService
             Bundle bTrack = new Bundle();
             bTrack.putParcelableArray("tracks", tracks);
             _controller.getTransportControls().sendCustomAction("SetPlaylist", bTrack);
+        }
+
+        public final void ClearHistory()
+        {
+            _controller.getTransportControls().sendCustomAction("ClearHistory", new Bundle());
         }
 
         @Override

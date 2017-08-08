@@ -176,7 +176,7 @@ namespace StreamingPlayer
             }
         }
 
-        static void ClearHistory()
+        public static void ClearHistory()
         {
             // neccesary when people want to set the playlist and not let it be possible
             // to go back in history to tracks not in the playlist.

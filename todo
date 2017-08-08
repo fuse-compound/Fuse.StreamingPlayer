@@ -18,8 +18,6 @@
 
 - ios: double play on switch track
 
-- add clear history
-
 ## Done
 
 I: Forward works even when no history
@@ -116,4 +114,7 @@ I: fix get playlist
 R: -
 
 I: add 'set current track'
+R: -
+
+I: add clear history
 R: -

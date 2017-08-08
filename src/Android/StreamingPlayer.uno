@@ -448,6 +448,14 @@ namespace StreamingPlayer
             }
         }
 
+        static public void ClearHistory()
+        {
+            if (IsConnected)
+            {
+                ClearHistoryImpl(_client);
+            }
+        }
+
         [Foreign(Language.Java)]
         static void NextImpl(Java.Object client)
         @{
@@ -481,6 +489,13 @@ namespace StreamingPlayer
         @{
             StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
             sClient.SwitchTrack(uid);
+        @}
+
+        [Foreign(Language.Java)]
+        static void ClearHistoryImpl(Java.Object client)
+        @{
+            StreamingAudioService.StreamingAudioClient sClient = (StreamingAudioService.StreamingAudioClient)client;
+            sClient.ClearHistory();
         @}
     }
 }

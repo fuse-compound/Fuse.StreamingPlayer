@@ -278,6 +278,11 @@ namespace StreamingPlayer
             }
         }
 
+        static public void ClearHistory()
+        {
+            Playlist.ClearHistory();
+        }
+
         static public void MakeTrackCurrentByUID(int uid)
         {
             Track track;

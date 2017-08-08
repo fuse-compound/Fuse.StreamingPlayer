@@ -39,6 +39,7 @@ namespace StreamingPlayer
             AddMember(new NativeFunction("stop", (NativeCallback)Stop));
             AddMember(new NativeFunction("seek", (NativeCallback)Seek));
             AddMember(new NativeFunction("switchTrack", (NativeCallback)SwitchTrack));
+            AddMember(new NativeFunction("clearHistory", (NativeCallback)ClearHistory));
 
             AddMember(new NativeProperty<PlayerStatus,string>("status", GetStatus, null, PlayerStatusConverter.Convert));
             AddMember(new NativeProperty<double,double>("duration", GetDuration));
@@ -199,6 +200,13 @@ namespace StreamingPlayer
         {
             if (!_playerInitialized) return null;
             StreamingPlayer.Stop();
+            return null;
+        }
+
+        object[] ClearHistory(Context c, object[] args)
+        {
+            if (!_playerInitialized) return null;
+            StreamingPlayer.ClearHistory();
             return null;
         }
     }
