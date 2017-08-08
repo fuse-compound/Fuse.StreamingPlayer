@@ -31,15 +31,16 @@ var itemClicked = function(item) {
 
 var backClicked = function() {
 	StreamingPlayer.stop();
+	StreamingPlayer.removeAllListeners();
 	router.goto("artists");
 };
 
-StreamingPlayer.on("currentTrackChanged", function() {
-	console.log("Track Changed: " + JSON.stringify(StreamingPlayer.currentTrack));
+StreamingPlayer.on("currentTrackChanged", function(track) {
+	console.log("Track Changed: " + JSON.stringify(track));
 });
 
-StreamingPlayer.on("statusChanged", function() {
-	console.log("Status Changed: " + JSON.stringify(StreamingPlayer.status));
+StreamingPlayer.on("statusChanged", function(status) {
+	console.log("Status Changed: " + JSON.stringify(status));
 });
 
 module.exports = {

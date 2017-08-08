@@ -94,19 +94,13 @@ namespace StreamingPlayer
             }
             private set
             {
-                var orig = Status;
+                var orig = _status;
                 _status = value;
 
-                if (_internalState == iOSPlayerState.Initialized
-                    && (_internalState == iOSPlayerState.Unknown || Status == PlayerStatus.Stopped))
-                {
-                    PlayImpl(_player);
-                }
-
                 var handler = StatusChanged;
-                if (handler != null && (Status != orig))
+                if (handler != null && (_status != orig))
                 {
-                    handler(Status);
+                    handler(_status);
                 }
             }
         }

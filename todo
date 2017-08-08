@@ -16,8 +16,6 @@
   Hmm I think we can just use forward always. As then when in history it just works and
   when there is no history then it uses the playlist. Cool!
 
-- ios: double play on switch track
-
 ## Done
 
 I: Forward works even when no history
@@ -118,3 +116,6 @@ R: -
 
 I: add clear history
 R: -
+
+I: ios - double play on switch track
+R: two issues, playimpl in set status & bad use of status from JS
