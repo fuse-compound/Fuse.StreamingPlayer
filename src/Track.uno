@@ -44,7 +44,7 @@ namespace StreamingPlayer
         {
             if (t == null) return null;
             var obj = c.NewObject();
-            obj["uid"] = t.UID;
+            obj["_uid"] = t.UID;
             obj["name"] = t.Name;
             obj["artist"] = t.Artist;
             obj["url"] = t.Url;
@@ -71,7 +71,7 @@ namespace StreamingPlayer
             if (CanConvert(t))
             {
                 var jsObject = (Fuse.Scripting.Object)o;
-                var uid = jsObject.ContainsKey("uid") ? Marshal.ToInt(jsObject["uid"]) : Track.NewUID();
+                var uid = jsObject.ContainsKey("_uid") ? Marshal.ToInt(jsObject["_uid"]) : Track.NewUID();
                 var name = jsObject.ContainsKey("name") ? jsObject["name"].ToString() : "<unknown name>";
                 var artist = jsObject.ContainsKey("artist") ? jsObject["artist"].ToString() : "<unknown artist>";
                 var url = jsObject["url"].ToString();

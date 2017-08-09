@@ -45,8 +45,8 @@ When you do this a *very* important transformation is done to the tracks, each o
 
 ```
 [
-    { "uid": 22, "url": "a.mp3", "duration": 140.0, .. },
-    { "uid": 30, "url": "b.mp3", "duration": 200.0, .. }
+    { "_uid": 22, "url": "a.mp3", "duration": 140.0, .. },
+    { "_uid": 30, "url": "b.mp3", "duration": 200.0, .. }
 ]
 ```
 
