@@ -78,26 +78,78 @@ Finally here are the functions, properties and events provided by `Fuse.Streamin
 
 - WIP -
 
-// functions
-next
-previous
-backward
-forward
-play
-pause
-stop
-seek
-switchTrack
-clearHistory
+### next()
 
-// properties
-status
-duration
-progress
-currentTrack
-playlist
+Play the next track in the playlist -or- if nothing is play, start playing the first track in the playlist
 
+### previous()
 
-// events
-statusChanged
-currentTrackChanged
+Play the previous track in the playlist
+
+### backward()
+
+Play the previous track in the play history or do nothing if there is nothing in the history
+
+### forward()
+
+If you have used `backward()` to move back in history then `forward()` moves you forward in history. If you are not playing from history this behaves the same as `next()`
+
+### play()
+
+If playback is paused, resume the playback.
+
+If there is no currently playing track play the first track in the playlist (effectively calling `next()`)
+
+### pause()
+
+Pause the currently playing track
+
+### stop()
+
+Stop playback, setting current track to null.
+
+### seek(seconds)
+
+Seek to a particular point in the track
+
+### switchTrack(track_object)
+
+Focus a particular track from the playlist
+
+### clearHistory()
+
+Clear the list of previously played tracks
+
+### status
+
+A property which returns the current state of the player. Generally it is preferred to use the `statusChanged` event so you are informed of all changes
+
+### currentTrack
+
+A property which returns the currently playing track object
+
+### duration
+
+A property which returns the duration of the currently playing track. This is identical to `Player.currentTrack.duration`
+
+### progress
+
+A property which returns the current playback position (in seconds) in the track
+
+### playlist
+
+Returns the current playlist as an array of track objects
+
+## statusChanged
+
+An event which fires when the status of the player has changed. The value passed to the callback function will be on the following strings:
+
+- "Stopped"
+- "Loading"
+- "Playing"
+- "Paused"
+- "Error"
+
+## currentTrackChanged
+
+An event which fires when the currently playing track has changed. Currently this does not pass the track object to the callback function so please use the `currentTrack` property
