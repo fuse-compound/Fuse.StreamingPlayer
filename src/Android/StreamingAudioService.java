@@ -12,6 +12,7 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Parcelable;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.support.v4.app.NotificationManagerCompat;
@@ -459,9 +460,16 @@ public final class StreamingAudioService
             public void onCustomAction(String action, Bundle extras)
             {
                 super.onCustomAction(action, extras);
+                extras.setClassLoader(Track.class.getClassLoader());
                 if (action.equals("SetPlaylist"))
                 {
-                    SetPlaylist((Track[])extras.getParcelableArray("tracks"));
+                    Parcelable[] pTracks = extras.getParcelableArray("tracks");
+                    ArrayList<Track> tracks = new ArrayList<Track>();
+                    for (Parcelable pTrack: pTracks)
+                    {
+                        tracks.add((com.fuse.StreamingPlayer.Track)pTrack);
+                    }
+                    SetPlaylist(tracks.toArray(new Track[tracks.size()]));
                 }
                 else if (action.equals("Forward"))
                 {
@@ -890,6 +898,7 @@ public final class StreamingAudioService
         public void SetPlaylist(Track[] tracks)
         {
             Bundle bTrack = new Bundle();
+            bTrack.setClassLoader(Track.class.getClassLoader());
             bTrack.putParcelableArray("tracks", tracks);
             _controller.getTransportControls().sendCustomAction("SetPlaylist", bTrack);
         }
@@ -910,7 +919,7 @@ public final class StreamingAudioService
         public void onSessionEvent(String event, Bundle extras)
         {
             super.onExtrasChanged(extras);
-
+            extras.setClassLoader(Track.class.getClassLoader());
             if (event.equals("trackChanged"))
             {
                 _currentTrack = (Track)extras.getParcelable("track");
