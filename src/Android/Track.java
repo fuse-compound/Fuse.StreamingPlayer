@@ -52,21 +52,6 @@ public class Track implements Parcelable {
     };
 
     @Override
-    public boolean equals(Object obj)
-    {
-        if (this == null) return false;
-        if (this == obj) return true;
-        if (this.getClass() != obj.getClass()) return false;
-        // Class name is Employ & have lastname
-        Track t = (Track) obj;
-
-        return this.UID == t.UID &&
-               this.Name.equals(t.Name) &&
-               this.Artist.equals(t.Artist) &&
-               this.Url.equals(t.Url);
-    }
-
-    @Override
     public int describeContents()
     {
         return 0;
