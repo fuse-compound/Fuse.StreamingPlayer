@@ -59,7 +59,7 @@ namespace StreamingPlayer
         [Foreign(Language.ObjC)]
         static ObjC.Object CreateArtworkFromUrl(string url)
         @{
-            if (url == null) return null;
+            if (url == NULL) return NULL;
             UIImage* uiImage;
             if ([url hasPrefix:@"http"] || [url hasPrefix:@"https"])
             {
